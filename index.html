@@ -1,892 +1,467 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cochran Claims Manager</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-
-        /* ── LOGIN WALL ── */
-        #authWall { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .auth-card { background: white; border-radius: 20px; padding: 50px 40px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); text-align: center; }
-        .auth-logo { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
-        .auth-tagline { color: #888; font-size: 14px; margin-bottom: 35px; }
-        .auth-toggle { display: flex; background: #f0f0f0; border-radius: 10px; padding: 4px; margin-bottom: 25px; }
-        .auth-toggle button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: #888; transition: all 0.2s; min-height: 40px; }
-        .auth-toggle button.active { background: white; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .auth-field { margin-bottom: 16px; text-align: left; }
-        .auth-field label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
-        .auth-field input { width: 100%; padding: 13px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 15px; font-family: inherit; transition: border-color 0.2s; -webkit-appearance: none; }
-        .auth-field input:focus { outline: none; border-color: #667eea; }
-        .auth-submit { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); transition: all 0.3s; min-height: 50px; }
-        .auth-submit:hover { transform: translateY(-2px); }
-        .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        .auth-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px; font-size: 14px; margin-bottom: 16px; display: none; text-align: left; }
-        .auth-error.show { display: block; }
-
-        /* ── APP SHELL ── */
-        #appShell { display: none; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: white; padding: 16px 24px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .company-logo { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .company-tagline { color: #888; font-size: 12px; }
-        .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .user-email { font-size: 13px; color: #555; font-weight: 500; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .firebase-badge { display: inline-flex; align-items: center; background: #fff3e0; border: 1px solid #ff9800; color: #e65100; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .firebase-badge.connected { background: #e8f5e9; border-color: #10b981; color: #065f46; }
-        .btn-signout { padding: 8px 14px; background: #fee2e2; color: #991b1b; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 36px; transition: background 0.2s; }
-        .btn-signout:hover { background: #fecaca; }
-
-        /* ── SCREENS ── */
-        .screen { display: none; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-        .screen.active { display: block; }
-        .home-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
-        .home-btn { padding: 40px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
-        .home-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(102,126,234,0.6); }
-        .home-btn:active { transform: translateY(-1px); }
-        .btn-icon { font-size: 48px; display: block; margin-bottom: 15px; }
-        .btn-label { font-size: 20px; display: block; }
-        .btn-desc { font-size: 13px; opacity: 0.9; margin-top: 8px; font-weight: 400; }
-        .form-section { margin-bottom: 35px; }
-        .form-section-title { font-size: 22px; font-weight: 700; color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #667eea; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group.full-width { grid-column: 1 / -1; }
-        label { font-weight: 600; color: #333; margin-bottom: 8px; font-size: 14px; }
-        input, select, textarea { padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px !important; font-family: inherit; transition: all 0.3s; -webkit-appearance: none; appearance: none; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
-        textarea { min-height: 100px; resize: vertical; }
-        .button-row { display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px; padding-top: 30px; border-top: 2px solid #f0f0f0; }
-        .btn { padding: 14px 28px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; min-height: 44px; }
-        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
-        .btn-primary:hover { transform: translateY(-2px); }
-        .btn-secondary { background: #f5f5f5; color: #333; }
-        .btn-secondary:hover { background: #e0e0e0; }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-danger { background: #ef4444; color: white; }
-        .btn-danger:hover { background: #dc2626; }
-        .search-box { display: flex; gap: 15px; margin-bottom: 30px; }
-        .search-box input { flex: 1; }
-        .claims-list { max-height: 500px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 8px; }
-        .claim-item { padding: 20px; border-bottom: 1px solid #e0e0e0; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .claim-item:hover { background: #f9f9f9; }
-        .claim-item:last-child { border-bottom: none; }
-        .claim-item-info { flex: 1; cursor: pointer; }
-        .claim-name { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 5px; }
-        .claim-details { font-size: 14px; color: #666; }
-        .claim-date { font-size: 12px; color: #999; margin-top: 5px; }
-        .claim-item-actions { display: flex; gap: 8px; flex-shrink: 0; margin-left: 15px; }
-        .btn-sm { padding: 8px 14px; font-size: 13px; min-height: 36px; }
-        .no-claims { text-align: center; padding: 60px 20px; color: #999; font-size: 16px; }
-        .status-message { padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; display: none; }
-        .status-message.show { display: block; }
-        .status-message.success { background: #d1fae5; color: #065f46; border: 2px solid #10b981; }
-        .status-message.error { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
-        .current-claim-bar { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 15px 30px; border-radius: 10px; margin-bottom: 20px; display: none; align-items: center; justify-content: space-between; }
-        .current-claim-bar.show { display: flex; }
-        .current-claim-name { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
-        .current-claim-date { font-size: 13px; opacity: 0.9; }
-        #property-estimator-frame { width: 100%; height: calc(100vh - 100px); border: none; border-radius: 10px; }
-        .loading { display: none; text-align: center; padding: 40px; }
-        .loading.show { display: block; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 768px) {
-            .auth-card { padding: 35px 25px; }
-            .container { padding: 10px; }
-            .header { padding: 12px 15px; }
-            .company-logo { font-size: 20px; }
-            .screen { padding: 15px; }
-            .home-btn { min-height: 100px; padding: 20px; }
-            .btn-icon { font-size: 36px; margin-bottom: 8px; }
-            .btn-label { font-size: 18px; }
-            .home-buttons { grid-template-columns: 1fr; gap: 15px; }
-            .form-grid { grid-template-columns: 1fr; gap: 15px; }
-            .button-row { flex-direction: column; gap: 10px; }
-            .btn { width: 100%; }
-            .current-claim-bar { flex-direction: column; gap: 10px; padding: 12px; }
-            .claim-item { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .claim-item-actions { margin-left: 0; }
-            .user-email { max-width: 130px; }
-        }
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .home-buttons { grid-template-columns: repeat(2, 1fr); }
-            .form-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        * { -webkit-overflow-scrolling: touch; touch-action: manipulation; }
-        button, select { min-height: 44px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cochran Claims Manager</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh}
+#authWall{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-card{background:white;border-radius:20px;padding:50px 40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center}
+.auth-logo{font-size:36px;font-weight:800;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.auth-tagline{color:#888;font-size:14px;margin-bottom:35px}
+.auth-toggle{display:flex;background:#f0f0f0;border-radius:10px;padding:4px;margin-bottom:25px}
+.auth-toggle button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:#888;transition:all .2s;min-height:40px}
+.auth-toggle button.active{background:white;color:#333;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.auth-field{margin-bottom:16px;text-align:left}
+.auth-field label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px}
+.auth-field input{width:100%;padding:13px 15px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;font-family:inherit;transition:border-color .2s;-webkit-appearance:none}
+.auth-field input:focus{outline:none;border-color:#667eea}
+.auth-submit{width:100%;padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;box-shadow:0 4px 15px rgba(102,126,234,0.4);transition:all .3s;min-height:50px}
+.auth-submit:hover{transform:translateY(-2px)}
+.auth-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.auth-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:12px;font-size:14px;margin-bottom:16px;display:none;text-align:left}
+.auth-error.show{display:block}
+#appShell{display:none}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.header{background:white;padding:16px 24px;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,0.1);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.company-logo{font-size:28px;font-weight:800;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.company-tagline{color:#888;font-size:12px}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.user-email{font-size:13px;color:#555;font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.firebase-badge{display:inline-flex;align-items:center;background:#fff3e0;border:1px solid #ff9800;color:#e65100;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.firebase-badge.connected{background:#e8f5e9;border-color:#10b981;color:#065f46}
+.btn-signout{padding:8px 14px;background:#fee2e2;color:#991b1b;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;min-height:36px;transition:background .2s}
+.btn-signout:hover{background:#fecaca}
+.screen{display:none;background:white;padding:40px;border-radius:15px;box-shadow:0 10px 40px rgba(0,0,0,0.1)}
+.screen.active{display:block}
+.home-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:30px}
+.home-btn{padding:40px 30px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;border-radius:12px;font-size:20px;font-weight:700;cursor:pointer;transition:all .3s;box-shadow:0 5px 20px rgba(102,126,234,0.4)}
+.home-btn:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(102,126,234,0.6)}
+.home-btn:active{transform:translateY(-1px)}
+.btn-icon{font-size:48px;display:block;margin-bottom:15px}
+.btn-label{font-size:20px;display:block}
+.btn-desc{font-size:13px;opacity:.9;margin-top:8px;font-weight:400}
+.form-section{margin-bottom:35px}
+.form-section-title{font-size:22px;font-weight:700;color:#333;margin-bottom:20px;padding-bottom:10px;border-bottom:3px solid #667eea}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.form-group{display:flex;flex-direction:column}
+.form-group.full-width{grid-column:1/-1}
+label{font-weight:600;color:#333;margin-bottom:8px;font-size:14px}
+input,select,textarea{padding:12px 15px;border:2px solid #e0e0e0;border-radius:8px;font-size:16px!important;font-family:inherit;transition:all .3s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+textarea{min-height:100px;resize:vertical}
+.button-row{display:flex;gap:15px;justify-content:flex-end;margin-top:30px;padding-top:30px;border-top:2px solid #f0f0f0}
+.btn{padding:14px 28px;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:all .3s;min-height:44px}
+.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;box-shadow:0 4px 15px rgba(102,126,234,0.4)}
+.btn-primary:hover{transform:translateY(-2px)}
+.btn-secondary{background:#f5f5f5;color:#333}
+.btn-secondary:hover{background:#e0e0e0}
+.btn-success{background:#10b981;color:white}
+.btn-success:hover{background:#059669}
+.btn-danger{background:#ef4444;color:white}
+.btn-danger:hover{background:#dc2626}
+.search-box{display:flex;gap:15px;margin-bottom:30px}
+.search-box input{flex:1}
+.claims-list{max-height:500px;overflow-y:auto;border:2px solid #e0e0e0;border-radius:8px}
+.claim-item{padding:20px;border-bottom:1px solid #e0e0e0;transition:background .2s;display:flex;justify-content:space-between;align-items:center}
+.claim-item:hover{background:#f9f9f9}
+.claim-item:last-child{border-bottom:none}
+.claim-item-info{flex:1;cursor:pointer}
+.claim-name{font-size:18px;font-weight:700;color:#333;margin-bottom:5px}
+.claim-details{font-size:14px;color:#666}
+.claim-date{font-size:12px;color:#999;margin-top:5px}
+.claim-item-actions{display:flex;gap:8px;flex-shrink:0;margin-left:15px}
+.btn-sm{padding:8px 14px;font-size:13px;min-height:36px}
+.no-claims{text-align:center;padding:60px 20px;color:#999;font-size:16px}
+.status-message{padding:15px 20px;border-radius:8px;margin-bottom:20px;font-weight:600;display:none}
+.status-message.show{display:block}
+.status-message.success{background:#d1fae5;color:#065f46;border:2px solid #10b981}
+.status-message.error{background:#fee2e2;color:#991b1b;border:2px solid #ef4444}
+.current-claim-bar{background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;padding:15px 30px;border-radius:10px;margin-bottom:20px;display:none;align-items:center;justify-content:space-between}
+.current-claim-bar.show{display:flex}
+.current-claim-name{font-size:18px;font-weight:700;margin-bottom:3px}
+.current-claim-date{font-size:13px;opacity:.9}
+#property-estimator-frame{width:100%;height:calc(100vh - 100px);border:none;border-radius:10px}
+.loading{display:none;text-align:center;padding:40px}
+.loading.show{display:block}
+.spinner{border:4px solid #f3f3f3;border-top:4px solid #667eea;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 15px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@media (max-width:768px){
+.auth-card{padding:35px 25px}
+.container{padding:10px}
+.header{padding:12px 15px}
+.company-logo{font-size:20px}
+.screen{padding:15px}
+.home-btn{min-height:100px;padding:20px}
+.btn-icon{font-size:36px;margin-bottom:8px}
+.btn-label{font-size:18px}
+.home-buttons{grid-template-columns:1fr;gap:15px}
+.form-grid{grid-template-columns:1fr;gap:15px}
+.button-row{flex-direction:column;gap:10px}
+.btn{width:100%}
+.current-claim-bar{flex-direction:column;gap:10px;padding:12px}
+.claim-item{flex-direction:column;align-items:flex-start;gap:10px}
+.claim-item-actions{margin-left:0}
+.user-email{max-width:130px}
+}
+@media (min-width:769px) and (max-width:1024px){
+.home-buttons{grid-template-columns:repeat(2,1fr)}
+.form-grid{grid-template-columns:repeat(2,1fr)}
+}
+*{-webkit-overflow-scrolling:touch;touch-action:manipulation}
+button,select{min-height:44px}
+</style>
 </head>
 <body>
 
-<!-- ══ LOGIN WALL ══════════════════════════════════════════════════════════ -->
 <div id="authWall">
-    <div class="auth-card">
-        <div class="auth-logo">🏠 COCHRAN CLAIMS</div>
-        <div class="auth-tagline">Professional Insurance Claims Management</div>
-
-        <div class="auth-toggle">
-            <button id="toggleSignIn" class="active" onclick="authUI.showSignIn()">Sign In</button>
-            <button id="toggleSignUp" onclick="authUI.showSignUp()">Create Account</button>
-        </div>
-
-        <div class="auth-error" id="authError"></div>
-
-        <div class="auth-field">
-            <label>Email Address</label>
-            <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
-        </div>
-        <div class="auth-field">
-            <label>Password</label>
-            <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
-        </div>
-        <div class="auth-field" id="confirmField" style="display:none;">
-            <label>Confirm Password</label>
-            <input type="password" id="authConfirm" placeholder="••••••••" autocomplete="new-password">
-        </div>
-
-        <button class="auth-submit" id="authSubmit" onclick="authUI.submit()">Sign In</button>
-    </div>
+<div class="auth-card">
+<div class="auth-logo">🏠 COCHRAN CLAIMS</div>
+<div class="auth-tagline">Professional Insurance Claims Management</div>
+<div class="auth-toggle">
+<button id="toggleSignIn" class="active" onclick="authUI.showSignIn()">Sign In</button>
+<button id="toggleSignUp" onclick="authUI.showSignUp()">Create Account</button>
+</div>
+<div class="auth-error" id="authError"></div>
+<div class="auth-field">
+<label>Email Address</label>
+<input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+</div>
+<div class="auth-field">
+<label>Password</label>
+<input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+</div>
+<div class="auth-field" id="confirmField" style="display:none">
+<label>Confirm Password</label>
+<input type="password" id="authConfirm" placeholder="••••••••" autocomplete="new-password">
+</div>
+<button class="auth-submit" id="authSubmit" onclick="authUI.submit()">Sign In</button>
+</div>
 </div>
 
-<!-- ══ APP SHELL ══════════════════════════════════════════════════════════ -->
 <div id="appShell">
 <div class="container">
 
-    <div class="header">
-        <div>
-            <div class="company-logo">🏠 COCHRAN CLAIMS</div>
-            <div class="company-tagline">Professional Insurance Claims Management</div>
-        </div>
-        <div class="header-right">
-            <div class="firebase-badge" id="firebaseBadge">⏳ Connecting...</div>
-            <div class="user-email" id="userEmailDisplay"></div>
-            <button class="btn-signout" onclick="authUI.signOut()">Sign Out</button>
-        </div>
-    </div>
+<div class="header">
+<div>
+<div class="company-logo">🏠 COCHRAN CLAIMS</div>
+<div class="company-tagline">Professional Insurance Claims Management</div>
+</div>
+<div class="header-right">
+<div class="firebase-badge" id="firebaseBadge">⏳ Connecting...</div>
+<div class="user-email" id="userEmailDisplay"></div>
+<button class="btn-signout" onclick="authUI.signOut()">Sign Out</button>
+</div>
+</div>
 
-    <div class="current-claim-bar" id="currentClaimBar">
-        <div>
-            <div class="current-claim-name" id="currentClaimName">No Claim Loaded</div>
-            <div class="current-claim-date" id="currentClaimDate"></div>
-        </div>
-        <button class="btn btn-secondary" onclick="claimManager.returnHome()">← Back to Home</button>
-    </div>
+<div class="current-claim-bar" id="currentClaimBar">
+<div>
+<div class="current-claim-name" id="currentClaimName">No Claim Loaded</div>
+<div class="current-claim-date" id="currentClaimDate"></div>
+</div>
+<button class="btn btn-secondary" onclick="claimManager.returnHome()">← Back to Home</button>
+</div>
 
-    <div class="status-message" id="statusMessage"></div>
+<div class="status-message" id="statusMessage"></div>
 
-    <!-- HOME -->
-    <div class="screen active" id="homeScreen">
-        <h1 style="text-align:center;margin-bottom:40px;color:#333;">Claim Management</h1>
-        <div class="home-buttons">
-            <button class="home-btn" onclick="claimManager.newClaim()">
-                <span class="btn-icon">📝</span><span class="btn-label">NEW</span><span class="btn-desc">Start a new claim</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.showOpenScreen()">
-                <span class="btn-icon">📂</span><span class="btn-label">OPEN</span><span class="btn-desc">Open existing claim</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.showImportScreen()">
-                <span class="btn-icon">📥</span><span class="btn-label">IMPORT</span><span class="btn-desc">Import from clipboard</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.saveClaim()" id="homeSaveBtn" style="opacity:0.5;" disabled>
-                <span class="btn-icon">💾</span><span class="btn-label">SAVE</span><span class="btn-desc">Save current claim</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.showSaveAsScreen()" id="homeSaveAsBtn" style="opacity:0.5;" disabled>
-                <span class="btn-icon">📤</span><span class="btn-label">SAVE AS</span><span class="btn-desc">Save with new name</span>
-            </button>
-        </div>
-    </div>
+<div class="screen active" id="homeScreen">
+<h1 style="text-align:center;margin-bottom:40px;color:#333">Claim Management</h1>
+<div class="home-buttons">
+<button class="home-btn" onclick="claimManager.newClaim()">
+<span class="btn-icon">📝</span><span class="btn-label">NEW</span><span class="btn-desc">Start a new claim</span>
+</button>
+<button class="home-btn" onclick="claimManager.showOpenScreen()">
+<span class="btn-icon">📂</span><span class="btn-label">OPEN</span><span class="btn-desc">Open existing claim</span>
+</button>
+<button class="home-btn" onclick="claimManager.showImportScreen()">
+<span class="btn-icon">📥</span><span class="btn-label">IMPORT</span><span class="btn-desc">Import from clipboard</span>
+</button>
+<button class="home-btn" onclick="claimManager.saveClaim()" id="homeSaveBtn" style="opacity:.5" disabled>
+<span class="btn-icon">💾</span><span class="btn-label">SAVE</span><span class="btn-desc">Save current claim</span>
+</button>
+<button class="home-btn" onclick="claimManager.showSaveAsScreen()" id="homeSaveAsBtn" style="opacity:.5" disabled>
+<span class="btn-icon">📤</span><span class="btn-label">SAVE AS</span><span class="btn-desc">Save with new name</span>
+</button>
+</div>
+</div>
 
-    <!-- OPEN -->
-    <div class="screen" id="openScreen">
-        <h2 style="margin-bottom:30px;">Open Existing Claim</h2>
-        <div class="search-box">
-            <input type="text" id="searchLastName" placeholder="Last Name" oninput="claimManager.searchClaims()">
-            <input type="text" id="searchFirstName" placeholder="First Name" oninput="claimManager.searchClaims()">
-            <button class="btn btn-primary" onclick="claimManager.searchClaims()">🔍 Search</button>
-        </div>
-        <div class="claims-list" id="claimsList"><div class="no-claims">Loading claims...</div></div>
-        <div class="button-row">
-            <button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
-        </div>
-    </div>
+<div class="screen" id="openScreen">
+<h2 style="margin-bottom:30px">Open Existing Claim</h2>
+<div class="search-box">
+<input type="text" id="searchLastName" placeholder="Last Name" oninput="claimManager.searchClaims()">
+<input type="text" id="searchFirstName" placeholder="First Name" oninput="claimManager.searchClaims()">
+<button class="btn btn-primary" onclick="claimManager.searchClaims()">🔍 Search</button>
+</div>
+<div class="claims-list" id="claimsList"><div class="no-claims">Loading claims...</div></div>
+<div class="button-row">
+<button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
+</div>
+</div>
 
-    <!-- IMPORT -->
-    <div class="screen" id="importScreen">
-        <h2 style="margin-bottom:20px;">📥 Import Claim Data</h2>
-        <p style="color:#666;margin-bottom:20px;line-height:1.6;">Paste JSON, CSV, tab-separated, or Key: Value data below.</p>
-        <div style="margin-bottom:20px;">
-            <label style="display:block;margin-bottom:10px;font-weight:600;color:#555;">Paste Your Data Here:</label>
-            <textarea id="importDataField" style="width:100%;min-height:280px;padding:15px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Courier New',monospace;font-size:13px;resize:vertical;" placeholder="Paste data here..."></textarea>
-        </div>
-        <div id="importPreview" style="display:none;background:#e8f5e9;padding:20px;border-radius:10px;margin-bottom:20px;border-left:4px solid #4caf50;">
-            <h3 style="margin:0 0 15px 0;color:#2e7d32;">✅ Data Detected!</h3>
-            <div id="importPreviewContent" style="font-size:14px;color:#555;line-height:1.6;"></div>
-        </div>
-        <div id="importError" style="display:none;background:#ffebee;padding:20px;border-radius:10px;margin-bottom:20px;border-left:4px solid #f44336;">
-            <h3 style="margin:0 0 10px 0;color:#c62828;">❌ Could Not Parse Data</h3>
-            <div id="importErrorMessage" style="font-size:14px;color:#666;"></div>
-        </div>
-        <div class="button-row">
-            <button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
-            <button class="btn btn-primary" onclick="claimManager.previewImport()">👀 Preview Data</button>
-            <button class="btn btn-success" onclick="claimManager.importClaim()" id="importConfirmBtn" style="display:none;">✅ Import Claim</button>
-        </div>
-    </div>
+<div class="screen" id="importScreen">
+<h2 style="margin-bottom:20px">📥 Import Claim Data</h2>
+<p style="color:#666;margin-bottom:20px;line-height:1.6">Paste JSON, CSV, tab-separated, or Key: Value data below.</p>
+<div style="margin-bottom:20px">
+<label style="display:block;margin-bottom:10px;font-weight:600;color:#555">Paste Your Data Here:</label>
+<textarea id="importDataField" style="width:100%;min-height:280px;padding:15px;border:2px solid #e0e0e0;border-radius:8px;font-family:'Courier New',monospace;font-size:13px;resize:vertical" placeholder="Paste data here..."></textarea>
+</div>
+<div id="importPreview" style="display:none;background:#e8f5e9;padding:20px;border-radius:10px;margin-bottom:20px;border-left:4px solid #4caf50">
+<h3 style="margin:0 0 15px 0;color:#2e7d32">✅ Data Detected!</h3>
+<div id="importPreviewContent" style="font-size:14px;color:#555;line-height:1.6"></div>
+</div>
+<div id="importError" style="display:none;background:#ffebee;padding:20px;border-radius:10px;margin-bottom:20px;border-left:4px solid #f44336">
+<h3 style="margin:0 0 10px 0;color:#c62828">❌ Could Not Parse Data</h3>
+<div id="importErrorMessage" style="font-size:14px;color:#666"></div>
+</div>
+<div class="button-row">
+<button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
+<button class="btn btn-primary" onclick="claimManager.previewImport()">👀 Preview Data</button>
+<button class="btn btn-success" onclick="claimManager.importClaim()" id="importConfirmBtn" style="display:none">✅ Import Claim</button>
+</div>
+</div>
 
-    <!-- CLIENT INFO -->
-    <div class="screen" id="clientScreen">
-        <h2 style="margin-bottom:30px;">Client Information</h2>
-        <form id="clientForm">
-            <div class="form-section">
-                <div class="form-section-title">Personal Information</div>
-                <div class="form-grid">
-                    <div class="form-group"><label>First Name *</label><input type="text" name="firstName" required></div>
-                    <div class="form-group"><label>Last Name *</label><input type="text" name="lastName" required></div>
-                    <div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="(555) 123-4567"></div>
-                    <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="client@example.com"></div>
-                </div>
-            </div>
-            <div class="form-section">
-                <div class="form-section-title">Property Address</div>
-                <div class="form-grid">
-                    <div class="form-group full-width"><label>Street Address *</label><input type="text" name="address" required></div>
-                    <div class="form-group"><label>City *</label><input type="text" name="city" required></div>
-                    <div class="form-group"><label>State *</label><input type="text" name="state" required></div>
-                    <div class="form-group"><label>ZIP Code *</label><input type="text" name="zip" required></div>
-                </div>
-            </div>
-            <div class="button-row">
-                <button type="button" class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Next: Claim Info →</button>
-            </div>
-        </form>
-    </div>
+<div class="screen" id="clientScreen">
+<h2 style="margin-bottom:30px">Client Information</h2>
+<form id="clientForm">
+<div class="form-section">
+<div class="form-section-title">Personal Information</div>
+<div class="form-grid">
+<div class="form-group"><label>First Name *</label><input type="text" name="firstName" required></div>
+<div class="form-group"><label>Last Name *</label><input type="text" name="lastName" required></div>
+<div class="form-group"><label>Phone</label><input type="tel" name="phone" placeholder="(555) 123-4567"></div>
+<div class="form-group"><label>Email</label><input type="email" name="email" placeholder="client@example.com"></div>
+</div>
+</div>
+<div class="form-section">
+<div class="form-section-title">Property Address</div>
+<div class="form-grid">
+<div class="form-group full-width"><label>Street Address *</label><input type="text" name="address" required></div>
+<div class="form-group"><label>City *</label><input type="text" name="city" required></div>
+<div class="form-group"><label>State *</label><input type="text" name="state" required></div>
+<div class="form-group"><label>ZIP Code *</label><input type="text" name="zip" required></div>
+</div>
+</div>
+<div class="button-row">
+<button type="button" class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
+<button type="submit" class="btn btn-primary">Next: Claim Info →</button>
+</div>
+</form>
+</div>
 
-    <!-- CLAIM INFO -->
-    <div class="screen" id="claimScreen">
-        <h2 style="margin-bottom:30px;">Claim Information</h2>
-        <form id="claimForm">
-            <div class="form-section">
-                <div class="form-section-title">Claim Details</div>
-                <div class="form-grid">
-                    <div class="form-group"><label>Claim Number *</label><input type="text" name="claimNumber" required></div>
-                    <div class="form-group"><label>Date of Loss *</label><input type="date" name="dateOfLoss" required></div>
-                    <div class="form-group full-width">
-                        <label>Loss Type *</label>
-                        <select name="lossType" required>
-                            <option value="">Select loss type...</option>
-                            <option>Water Damage</option><option>Fire</option><option>Storm</option>
-                            <option>Wind</option><option>Hail</option><option>Theft</option>
-                            <option>Vandalism</option><option>Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group full-width"><label>Description of Loss</label><textarea name="description" placeholder="Describe the damage..."></textarea></div>
-                </div>
-            </div>
-            <div class="button-row">
-                <button type="button" class="btn btn-secondary" onclick="claimManager.showScreen('clientScreen')">← Back</button>
-                <button type="submit" class="btn btn-primary">Next: Insurance Info →</button>
-            </div>
-        </form>
-    </div>
+<div class="screen" id="claimScreen">
+<h2 style="margin-bottom:30px">Claim Information</h2>
+<form id="claimForm">
+<div class="form-section">
+<div class="form-section-title">Claim Details</div>
+<div class="form-grid">
+<div class="form-group"><label>Claim Number *</label><input type="text" name="claimNumber" required></div>
+<div class="form-group"><label>Date of Loss *</label><input type="date" name="dateOfLoss" required></div>
+<div class="form-group full-width">
+<label>Loss Type *</label>
+<select name="lossType" required>
+<option value="">Select loss type...</option>
+<option>Water Damage</option><option>Fire</option><option>Storm</option>
+<option>Wind</option><option>Hail</option><option>Theft</option>
+<option>Vandalism</option><option>Other</option>
+</select>
+</div>
+<div class="form-group full-width"><label>Description of Loss</label><textarea name="description" placeholder="Describe the damage..."></textarea></div>
+</div>
+</div>
+<div class="button-row">
+<button type="button" class="btn btn-secondary" onclick="claimManager.showScreen('clientScreen')">← Back</button>
+<button type="submit" class="btn btn-primary">Next: Insurance Info →</button>
+</div>
+</form>
+</div>
 
-    <!-- INSURANCE INFO -->
-    <div class="screen" id="insuranceScreen">
-        <h2 style="margin-bottom:30px;">Insurance Information</h2>
-        <form id="insuranceForm">
-            <div class="form-section">
-                <div class="form-section-title">Insurance Company</div>
-                <div class="form-grid">
-                    <div class="form-group full-width"><label>Insurance Company *</label><input type="text" name="company" required></div>
-                    <div class="form-group full-width"><label>Policy Number *</label><input type="text" name="policyNumber" required></div>
-                    <div class="form-group"><label>Deductible</label><input type="text" name="deductible" placeholder="$1,000"></div>
-                </div>
-            </div>
-            <div class="form-section">
-                <div class="form-section-title">Adjuster Information</div>
-                <div class="form-grid">
-                    <div class="form-group full-width"><label>Adjuster Name</label><input type="text" name="adjuster"></div>
-                    <div class="form-group"><label>Adjuster Phone</label><input type="tel" name="adjusterPhone" placeholder="(555) 123-4567"></div>
-                    <div class="form-group"><label>Adjuster Email</label><input type="email" name="adjusterEmail"></div>
-                </div>
-            </div>
-            <div class="button-row">
-                <button type="button" class="btn btn-secondary" onclick="claimManager.showScreen('claimScreen')">← Back</button>
-                <button type="submit" class="btn btn-success">Open Property Estimator →</button>
-            </div>
-        </form>
-    </div>
+<div class="screen" id="insuranceScreen">
+<h2 style="margin-bottom:30px">Insurance Information</h2>
+<form id="insuranceForm">
+<div class="form-section">
+<div class="form-section-title">Insurance Company</div>
+<div class="form-grid">
+<div class="form-group full-width"><label>Insurance Company *</label><input type="text" name="company" required></div>
+<div class="form-group full-width"><label>Policy Number *</label><input type="text" name="policyNumber" required></div>
+<div class="form-group"><label>Deductible</label><input type="text" name="deductible" placeholder="$1,000"></div>
+</div>
+</div>
+<div class="form-section">
+<div class="form-section-title">Adjuster Information</div>
+<div class="form-grid">
+<div class="form-group full-width"><label>Adjuster Name</label><input type="text" name="adjuster"></div>
+<div class="form-group"><label>Adjuster Phone</label><input type="tel" name="adjusterPhone" placeholder="(555) 123-4567"></div>
+<div class="form-group"><label>Adjuster Email</label><input type="email" name="adjusterEmail"></div>
+</div>
+</div>
+<div class="button-row">
+<button type="button" class="btn btn-secondary" onclick="claimManager.showScreen('claimScreen')">← Back</button>
+<button type="submit" class="btn btn-success">Open Property Estimator →</button>
+</div>
+</form>
+</div>
 
-    <!-- SAVE AS -->
-    <div class="screen" id="saveAsScreen">
-        <h2 style="margin-bottom:30px;">Save Claim As...</h2>
-        <div class="form-section">
-            <div class="form-group">
-                <label>Claim Name</label>
-                <input type="text" id="saveAsName" placeholder="LastName-FirstName-ClaimNumber">
-            </div>
-            <p style="color:#666;margin-top:10px;font-size:14px;">Current name: <strong id="currentSaveAsName">Not set</strong></p>
-        </div>
-        <div class="button-row">
-            <button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
-            <button class="btn btn-success" onclick="claimManager.saveClaimAs()">💾 Save As</button>
-        </div>
-    </div>
+<div class="screen" id="saveAsScreen">
+<h2 style="margin-bottom:30px">Save Claim As...</h2>
+<div class="form-section">
+<div class="form-group">
+<label>Claim Name</label>
+<input type="text" id="saveAsName" placeholder="LastName-FirstName-ClaimNumber">
+</div>
+<p style="color:#666;margin-top:10px;font-size:14px">Current name: <strong id="currentSaveAsName">Not set</strong></p>
+</div>
+<div class="button-row">
+<button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">Cancel</button>
+<button class="btn btn-success" onclick="claimManager.saveClaimAs()">💾 Save As</button>
+</div>
+</div>
 
-    <!-- CLAIM OPENED -->
-    <div class="screen" id="claimOpenedScreen">
-        <h2 style="margin-bottom:20px;text-align:center;">Claim Opened Successfully! ✅</h2>
-        <div style="background:#f9f9f9;padding:25px;border-radius:10px;margin-bottom:30px;">
-            <h3 style="color:#333;margin-bottom:15px;">📋 Claim Information:</h3>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;font-size:15px;">
-                <div><strong>Client:</strong> <span id="openedClientName">-</span></div>
-                <div><strong>Claim #:</strong> <span id="openedClaimNumber">-</span></div>
-                <div><strong>Loss Type:</strong> <span id="openedLossType">-</span></div>
-                <div><strong>Insurance:</strong> <span id="openedInsurance">-</span></div>
-                <div style="grid-column:1/-1;"><strong>Address:</strong> <span id="openedAddress">-</span></div>
-            </div>
-        </div>
-        <div class="home-buttons" style="margin-top:20px;">
-            <button class="home-btn" onclick="claimManager.goToEstimator()">
-                <span class="btn-icon">🏗️</span><span class="btn-label">CONTINUE TO ESTIMATOR</span><span class="btn-desc">Work on property &amp; estimate</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.showScreen('clientScreen')">
-                <span class="btn-icon">✏️</span><span class="btn-label">EDIT CLIENT INFO</span><span class="btn-desc">Update client details</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.showScreen('claimScreen')">
-                <span class="btn-icon">📝</span><span class="btn-label">EDIT CLAIM INFO</span><span class="btn-desc">Update claim details</span>
-            </button>
-            <button class="home-btn" onclick="claimManager.showScreen('insuranceScreen')">
-                <span class="btn-icon">🏢</span><span class="btn-label">EDIT INSURANCE INFO</span><span class="btn-desc">Update insurance details</span>
-            </button>
-        </div>
-        <div class="button-row" style="margin-top:30px;">
-            <button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">← Back to Home</button>
-        </div>
-    </div>
+<div class="screen" id="claimOpenedScreen">
+<h2 style="margin-bottom:20px;text-align:center">Claim Opened Successfully! ✅</h2>
+<div style="background:#f9f9f9;padding:25px;border-radius:10px;margin-bottom:30px">
+<h3 style="color:#333;margin-bottom:15px">📋 Claim Information:</h3>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;font-size:15px">
+<div><strong>Client:</strong> <span id="openedClientName">-</span></div>
+<div><strong>Claim #:</strong> <span id="openedClaimNumber">-</span></div>
+<div><strong>Loss Type:</strong> <span id="openedLossType">-</span></div>
+<div><strong>Insurance:</strong> <span id="openedInsurance">-</span></div>
+<div style="grid-column:1/-1"><strong>Address:</strong> <span id="openedAddress">-</span></div>
+</div>
+</div>
+<div class="home-buttons" style="margin-top:20px">
+<button class="home-btn" onclick="claimManager.goToEstimator()">
+<span class="btn-icon">🏗️</span><span class="btn-label">CONTINUE TO ESTIMATOR</span><span class="btn-desc">Work on property &amp; estimate</span>
+</button>
+<button class="home-btn" onclick="claimManager.showScreen('clientScreen')">
+<span class="btn-icon">✏️</span><span class="btn-label">EDIT CLIENT INFO</span><span class="btn-desc">Update client details</span>
+</button>
+<button class="home-btn" onclick="claimManager.showScreen('claimScreen')">
+<span class="btn-icon">📝</span><span class="btn-label">EDIT CLAIM INFO</span><span class="btn-desc">Update claim details</span>
+</button>
+<button class="home-btn" onclick="claimManager.showScreen('insuranceScreen')">
+<span class="btn-icon">🏢</span><span class="btn-label">EDIT INSURANCE INFO</span><span class="btn-desc">Update insurance details</span>
+</button>
+</div>
+<div class="button-row" style="margin-top:30px">
+<button class="btn btn-secondary" onclick="claimManager.showScreen('homeScreen')">← Back to Home</button>
+</div>
+</div>
 
-    <!-- ESTIMATOR -->
-    <div class="screen" id="estimatorScreen">
-        <div class="loading show" id="estimatorLoading">
-            <div class="spinner"></div><p>Loading Property Estimator...</p>
-        </div>
-        <iframe id="property-estimator-frame" style="display:none;"></iframe>
-    </div>
+<div class="screen" id="estimatorScreen">
+<div class="loading show" id="estimatorLoading">
+<div class="spinner"></div><p>Loading Property Estimator...</p>
+</div>
+<iframe id="property-estimator-frame" style="display:none"></iframe>
+</div>
 
 </div>
 </div>
 
-<!-- ══ FIREBASE SDKs ══════════════════════════════════════════════════════ -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const firebaseConfig = {
-    apiKey:            "AIzaSyB5v7ICjvpK1z7pMvvBhZWSYjGp_ac_A9U",
-    authDomain:        "cochran-claims.firebaseapp.com",
-    projectId:         "cochran-claims",
-    storageBucket:     "cochran-claims.firebasestorage.app",
-    messagingSenderId: "307914286893",
-    appId:             "1:307914286893:web:5a3692614ee69b83a6d5a4",
-    measurementId:     "G-RX6S4YR1KE"
-};
+const firebaseConfig={apiKey:"AIzaSyB5v7ICjvpK1z7pMvvBhZWSYjGp_ac_A9U",authDomain:"cochran-claims.firebaseapp.com",projectId:"cochran-claims",storageBucket:"cochran-claims.firebasestorage.app",messagingSenderId:"307914286893",appId:"1:307914286893:web:5a3692614ee69b83a6d5a4",measurementId:"G-RX6S4YR1KE"};
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+const auth=firebase.auth();
+const db=firebase.firestore();
 
-// ── AUTH UI ───────────────────────────────────────────────────────────────────
-const authUI = {
-    mode: 'signin',
+// ══ CLAIMS EDITOR ↔ COCHRAN DATA CONVERSION ═══════════════════════════════
+function isClaimsEditorFormat(d){return d.firstName!==undefined||d.lastName!==undefined}
 
-    showSignIn() {
-        this.mode = 'signin';
-        document.getElementById('toggleSignIn').classList.add('active');
-        document.getElementById('toggleSignUp').classList.remove('active');
-        document.getElementById('confirmField').style.display = 'none';
-        document.getElementById('authSubmit').textContent = 'Sign In';
-        document.getElementById('authPassword').autocomplete = 'current-password';
-        this.clearError();
-    },
-
-    showSignUp() {
-        this.mode = 'signup';
-        document.getElementById('toggleSignUp').classList.add('active');
-        document.getElementById('toggleSignIn').classList.remove('active');
-        document.getElementById('confirmField').style.display = 'block';
-        document.getElementById('authSubmit').textContent = 'Create Account';
-        document.getElementById('authPassword').autocomplete = 'new-password';
-        this.clearError();
-    },
-
-    async submit() {
-        const email    = document.getElementById('authEmail').value.trim();
-        const password = document.getElementById('authPassword').value;
-        const confirm  = document.getElementById('authConfirm').value;
-        const btn      = document.getElementById('authSubmit');
-        this.clearError();
-
-        if (!email || !password) { this.showError('Please enter your email and password.'); return; }
-        if (this.mode === 'signup') {
-            if (password.length < 6) { this.showError('Password must be at least 6 characters.'); return; }
-            if (password !== confirm) { this.showError('Passwords do not match.'); return; }
-        }
-
-        btn.disabled = true;
-        btn.textContent = this.mode === 'signin' ? 'Signing in...' : 'Creating account...';
-
-        try {
-            if (this.mode === 'signin') {
-                await auth.signInWithEmailAndPassword(email, password);
-            } else {
-                await auth.createUserWithEmailAndPassword(email, password);
-            }
-        } catch (err) {
-            btn.disabled = false;
-            btn.textContent = this.mode === 'signin' ? 'Sign In' : 'Create Account';
-            this.showError(this.friendlyError(err.code));
-        }
-    },
-
-    async signOut() {
-        if (typeof claimManager !== 'undefined' && claimManager?.currentClaim) claimManager.saveClaim(false);
-        await auth.signOut();
-    },
-
-    showError(msg) {
-        const el = document.getElementById('authError');
-        el.textContent = msg;
-        el.classList.add('show');
-    },
-
-    clearError() { document.getElementById('authError').classList.remove('show'); },
-
-    friendlyError(code) {
-        const map = {
-            'auth/user-not-found':       'No account found with that email.',
-            'auth/wrong-password':       'Incorrect password. Please try again.',
-            'auth/invalid-email':        'Please enter a valid email address.',
-            'auth/email-already-in-use': 'An account with that email already exists.',
-            'auth/weak-password':        'Password must be at least 6 characters.',
-            'auth/too-many-requests':    'Too many attempts. Please wait and try again.',
-            'auth/invalid-credential':   'Incorrect email or password.',
-        };
-        return map[code] || 'An error occurred. Please try again.';
-    }
-};
-
-// Enter key on auth inputs
-['authEmail','authPassword','authConfirm'].forEach(id => {
-    document.getElementById(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') authUI.submit(); });
-});
-
-// ── AUTH STATE ────────────────────────────────────────────────────────────────
-let claimManager;
-
-auth.onAuthStateChanged(user => {
-    if (user) {
-        document.getElementById('authWall').style.display  = 'none';
-        document.getElementById('appShell').style.display  = 'block';
-        document.getElementById('userEmailDisplay').textContent = user.email;
-
-        db.collection('claims').limit(1).get()
-            .then(() => {
-                const b = document.getElementById('firebaseBadge');
-                b.textContent = '🔥 Firebase Connected';
-                b.classList.add('connected');
-            })
-            .catch(() => {
-                document.getElementById('firebaseBadge').textContent = '⚠️ Firestore error';
-            });
-
-        if (!claimManager) claimManager = new ClaimManager();
-
-    } else {
-        document.getElementById('authWall').style.display  = 'flex';
-        document.getElementById('appShell').style.display  = 'none';
-        const btn = document.getElementById('authSubmit');
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-        authUI.showSignIn();
-        claimManager = null;
-    }
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  COCHRAN CLAIMS MANAGER v5.1
-// ════════════════════════════════════════════════════════════════════════════
-class ClaimManager {
-    constructor() {
-        this.currentClaim = null;
-        this.allClaims    = [];
-        this.COLLECTION   = 'claims';
-        this.init();
-    }
-
-    async init() {
-        this.setupFormHandlers();
-        this.setupPropertyEstimatorListener();
-        const session = sessionStorage.getItem('currentClaim');
-        if (session) {
-            this.currentClaim = JSON.parse(session);
-            this.updateCurrentClaimBar();
-            this.enableSaveButtons();
-        }
-        await this.loadAllClaims();
-        console.log('%c🏠 COCHRAN CLAIMS v5.1 — Auth + Firebase', 'background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:13px;font-weight:bold;padding:8px;');
-    }
-
-    setupPropertyEstimatorListener() {
-        window.addEventListener('message', e => {
-            if (e.data?.type === 'SAVE_PROPERTY_DATA') this.savePropertyData(e.data.propertyData);
-            if (e.data?.type === 'RETURN_TO_HOME') setTimeout(() => this.showScreen('homeScreen'), 500);
-        });
-    }
-
-    savePropertyData(pd) {
-        if (!this.currentClaim) { this.showStatus('❌ No active claim.', 'error'); return; }
-        this.currentClaim.propertyData = pd;
-        this.currentClaim.dateModified = this._today();
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.saveClaim(false);
-        this.showStatus(`✅ Property data saved! (${pd.rooms?.length ?? 0} rooms)`, 'success');
-    }
-
-    setupFormHandlers() {
-        document.getElementById('clientForm').addEventListener('submit',    e => { e.preventDefault(); this.saveClientInfo(); });
-        document.getElementById('claimForm').addEventListener('submit',     e => { e.preventDefault(); this.saveClaimInfo(); });
-        document.getElementById('insuranceForm').addEventListener('submit', e => { e.preventDefault(); this.saveInsuranceInfo(); });
-    }
-
-    showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    newClaim() {
-        this.currentClaim = {
-            claimId: 'CLAIM-' + Date.now(), claimName: 'Untitled Claim',
-            dateCreated: this._today(), dateModified: this._today(),
-            createdBy: auth.currentUser?.email || 'unknown',
-            clientInfo: {}, claimInfo: {}, insuranceInfo: {},
-            propertyData: null, selectedItems: [], estimate: null
-        };
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.updateCurrentClaimBar();
-        this.enableSaveButtons();
-        document.getElementById('clientForm').reset();
-        document.getElementById('claimForm').reset();
-        document.getElementById('insuranceForm').reset();
-        this.showScreen('clientScreen');
-        this.showStatus('New claim started!', 'success');
-    }
-
-    saveClientInfo() {
-        const fd = new FormData(document.getElementById('clientForm'));
-        this.currentClaim.clientInfo = Object.fromEntries(fd);
-        this.currentClaim.claimName = `${this.currentClaim.clientInfo.lastName||'Unknown'}-${this.currentClaim.clientInfo.firstName||'Unknown'}`;
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.updateCurrentClaimBar();
-        this.showScreen('claimScreen');
-        this.showStatus('Client information saved!', 'success');
-    }
-
-    saveClaimInfo() {
-        const fd = new FormData(document.getElementById('claimForm'));
-        this.currentClaim.claimInfo = Object.fromEntries(fd);
-        if (this.currentClaim.claimInfo.claimNumber) this.currentClaim.claimName += `-${this.currentClaim.claimInfo.claimNumber}`;
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.updateCurrentClaimBar();
-        this.showScreen('insuranceScreen');
-        this.showStatus('Claim information saved!', 'success');
-    }
-
-    saveInsuranceInfo() {
-        const fd = new FormData(document.getElementById('insuranceForm'));
-        this.currentClaim.insuranceInfo = Object.fromEntries(fd);
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.updateCurrentClaimBar();
-        this.saveClaim(false);
-        this.loadPropertyEstimator();
-        this.showStatus('Insurance saved! Loading estimator...', 'success');
-    }
-
-    loadPropertyEstimator() {
-        this.showScreen('estimatorScreen');
-        const iframe = document.getElementById('property-estimator-frame');
-        const loading = document.getElementById('estimatorLoading');
-        iframe.onload = () => {
-            loading.style.display = 'none';
-            iframe.style.display  = 'block';
-            const send = () => { try { iframe.contentWindow.postMessage({ type: 'LOAD_CLAIM_DATA', data: this.currentClaim }, '*'); } catch(e){} };
-            send(); setTimeout(send,500); setTimeout(send,1000); setTimeout(send,2000);
-        };
-        iframe.onerror = () => {
-            loading.innerHTML = '<div style="color:#ef4444;font-weight:bold;">❌ Error Loading Estimator</div><p style="margin-top:15px;color:#666;">Make sure Property-Estimator-FIXED.html is in the same folder.</p><button class="btn btn-primary" onclick="claimManager.showScreen(\'homeScreen\')" style="margin-top:20px;">Return to Home</button>';
-        };
-        iframe.src = 'Property-Estimator-FIXED.html';
-    }
-
-    async saveClaim(showMessage = true) {
-        if (!this.currentClaim) { this.showStatus('No claim to save!', 'error'); return false; }
-        this.currentClaim.dateModified = this._today();
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        try {
-            await db.collection(this.COLLECTION).doc(this.currentClaim.claimId).set(this.currentClaim);
-            const idx = this.allClaims.findIndex(c => c.claimId === this.currentClaim.claimId);
-            if (idx >= 0) this.allClaims[idx] = this.currentClaim; else this.allClaims.push(this.currentClaim);
-            if (showMessage) this.showStatus(`✅ "${this.currentClaim.claimName}" saved!`, 'success');
-            return true;
-        } catch (err) {
-            console.error('Save error:', err);
-            if (showMessage) this.showStatus('❌ Save failed: ' + err.message, 'error');
-            return false;
-        }
-    }
-
-    showSaveAsScreen() {
-        if (!this.currentClaim) { this.showStatus('No claim to save!', 'error'); return; }
-        document.getElementById('saveAsName').value              = this.currentClaim.claimName;
-        document.getElementById('currentSaveAsName').textContent = this.currentClaim.claimName;
-        this.showScreen('saveAsScreen');
-    }
-
-    async saveClaimAs() {
-        if (!this.currentClaim) return;
-        const newName = document.getElementById('saveAsName').value.trim();
-        if (!newName) { this.showStatus('Please enter a name!', 'error'); return; }
-        if (newName !== this.currentClaim.claimName) this.currentClaim.claimId = 'CLAIM-' + Date.now();
-        this.currentClaim.claimName = newName;
-        if (await this.saveClaim(false)) {
-            this.showStatus(`Saved as "${newName}"!`, 'success');
-            this.updateCurrentClaimBar();
-            this.showScreen('homeScreen');
-        }
-    }
-
-    async deleteClaim(claimId, event) {
-        if (event) event.stopPropagation();
-        const claim = this.allClaims.find(c => c.claimId === claimId);
-        if (!claim || !confirm(`Delete "${claim.claimName}"?\n\nThis cannot be undone.`)) return;
-        try {
-            await db.collection(this.COLLECTION).doc(claimId).delete();
-            this.allClaims = this.allClaims.filter(c => c.claimId !== claimId);
-            if (this.currentClaim?.claimId === claimId) {
-                this.currentClaim = null;
-                sessionStorage.removeItem('currentClaim');
-                this.updateCurrentClaimBar();
-                ['homeSaveBtn','homeSaveAsBtn'].forEach(id => { document.getElementById(id).disabled = true; document.getElementById(id).style.opacity = '0.5'; });
-            }
-            this.showStatus('🗑️ Claim deleted.', 'success');
-            this.displayAllClaims();
-        } catch (err) { this.showStatus('❌ Delete failed: ' + err.message, 'error'); }
-    }
-
-    showImportScreen() {
-        document.getElementById('importDataField').value = '';
-        document.getElementById('importPreview').style.display = 'none';
-        document.getElementById('importError').style.display = 'none';
-        document.getElementById('importConfirmBtn').style.display = 'none';
-        this.importedData = null;
-        this.showScreen('importScreen');
-    }
-
-    previewImport() {
-        const raw = document.getElementById('importDataField').value.trim();
-        if (!raw) { this.showImportError('Please paste some data first!'); return; }
-        try {
-            const parsed = this.parseImportData(raw);
-            if (!parsed) { this.showImportError('Could not detect format. Please check and try again.'); return; }
-            this.importedData = parsed;
-            this.showImportPreview(parsed);
-            document.getElementById('importConfirmBtn').style.display = 'block';
-        } catch (e) { this.showImportError('Error: ' + e.message); }
-    }
-
-    parseImportData(raw) {
-        if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) {
-            try { return this.normalizeData(JSON.parse(raw)); } catch(e) {}
-        }
-        const lines = raw.split('\n').filter(l => l.trim());
-        if (lines.length >= 2 && (lines[0].includes(',') || lines[0].includes('\t'))) {
-            const d = lines[0].includes('\t') ? '\t' : ',';
-            const h = lines[0].split(d).map(x => x.trim().toLowerCase());
-            const v = lines[1].split(d).map(x => x.trim());
-            if (h.length === v.length) { const o={}; h.forEach((k,i)=>o[k]=v[i]); return this.normalizeData(o); }
-        }
-        const kv = /^([^:]+):\s*(.+)$/;
-        if (lines.some(l => kv.test(l))) {
-            const o={};
-            lines.forEach(l => { const m=l.match(kv); if(m) o[m[1].trim().toLowerCase().replace(/\s+/g,'')]=m[2].trim(); });
-            if (Object.keys(o).length) return this.normalizeData(o);
-        }
-        if (lines[0]?.includes('\t')) {
-            const o={};
-            lines.forEach(l => { const p=l.split('\t').map(x=>x.trim()); if(p.length>=2) o[p[0].toLowerCase().replace(/\s+/g,'')]=p[1]; });
-            if (Object.keys(o).length) return this.normalizeData(o);
-        }
-        return null;
-    }
-
-    normalizeData(data) {
-        const km={};
-        Object.keys(data).forEach(k=>{ km[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=data[k]; });
-        const f=(...keys)=>{ for(const k of keys){ const n=k.toLowerCase().replace(/[^a-z0-9]/g,''); if(km[n]) return km[n]; } return ''; };
-        const af=f('adjusterfirstname','adjusterFirst'), al=f('adjusterlastname','adjusterLast');
-        return {
-            clientInfo:    { firstName:f('firstName','first','fname','givenname'), middleInitial:f('middleInitial','middle','mi'), lastName:f('lastName','last','lname','surname','familyname'), phone:f('phone','phoneNumber','mobile','cell','telephone'), email:f('email','emailAddress','mail'), address:f('streetAddress1','address','street','streetAddress','propertyAddress','address1'), city:f('city','town'), state:f('state','province'), zip:f('zip','zipCode','postalCode','postcode') },
-            claimInfo:     { claimNumber:f('claimNumber','claim','claimNum','claimNo','claimId','insuranceclaimnumber'), dateOfLoss:f('dateOfLoss','lossDate','incidentDate','date'), lossType:f('lossType','type','damageType','incidentType','causeoflossperil','reasonforclaim'), description:f('description','desc','details','notes','descriptionofloss') },
-            insuranceInfo: { company:f('insuranceCompany','insurancecompanyname','insurance','insurer','carrier','company'), policyNumber:f('policyNumber','policy','policyNum','policyNo'), deductible:f('deductible','deduct','deductable'), adjuster:f('adjuster','adjusterName','agent')||(af&&al?`${af} ${al}`:af||al||''), adjusterPhone:f('adjusterPhone','adjusterPhoneNumber','agentPhone'), adjusterEmail:f('adjusterEmail','adjusterEmailAddress','agentEmail') }
-        };
-    }
-
-    showImportPreview(data) {
-        document.getElementById('importError').style.display = 'none';
-        const sec=(t,fs)=>{ const r=fs.filter(([,v])=>v).map(([l,v])=>`<li>${l}: ${v}</li>`).join(''); return r?`<div><strong>${t}</strong><ul style="margin:5px 0 0 20px;">${r}</ul></div>`:''; };
-        const c=data.clientInfo, cl=data.claimInfo, i=data.insuranceInfo;
-        let html='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;">';
-        html+=sec('👤 Client:',[['First',c.firstName],['Last',c.lastName],['Phone',c.phone],['Email',c.email],['Address',c.address],['City',c.city],['State',c.state],['ZIP',c.zip]]);
-        html+=sec('📋 Claim:',[['Claim #',cl.claimNumber],['Date of Loss',cl.dateOfLoss],['Loss Type',cl.lossType]]);
-        html+=`<div style="grid-column:1/-1;">${sec('🏢 Insurance:',[['Company',i.company],['Policy #',i.policyNumber],['Deductible',i.deductible],['Adjuster',i.adjuster],['Adj. Phone',i.adjusterPhone],['Adj. Email',i.adjusterEmail]])}</div>`;
-        html+='</div>';
-        document.getElementById('importPreviewContent').innerHTML = html;
-        document.getElementById('importPreview').style.display = 'block';
-    }
-
-    showImportError(msg) {
-        document.getElementById('importPreview').style.display = 'none';
-        document.getElementById('importConfirmBtn').style.display = 'none';
-        document.getElementById('importErrorMessage').textContent = msg;
-        document.getElementById('importError').style.display = 'block';
-    }
-
-    async importClaim() {
-        if (!this.importedData) return;
-        this._createClaimFromData(this.importedData);
-        await this.saveClaim(false);
-        this.showStatus(`📥 Imported: ${this.currentClaim.claimName}`, 'success');
-        this.showClaimOpenedOptions();
-    }
-
-    _createClaimFromData(data) {
-        this.currentClaim = { claimId:'CLAIM-'+Date.now(), claimName:'Imported Claim', dateCreated:this._today(), dateModified:this._today(), createdBy:auth.currentUser?.email||'unknown', clientInfo:data.clientInfo||{}, claimInfo:data.claimInfo||{}, insuranceInfo:data.insuranceInfo||{}, propertyData:null, selectedItems:[], estimate:null };
-        const l=this.currentClaim.clientInfo.lastName||'Unknown', fi=this.currentClaim.clientInfo.firstName||'Unknown', n=this.currentClaim.claimInfo.claimNumber||'';
-        this.currentClaim.claimName=`${l}-${fi}${n?'-'+n:''}`;
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.updateCurrentClaimBar(); this.enableSaveButtons(); this.populateForms();
-    }
-
-    async showOpenScreen() {
-        this.showScreen('openScreen');
-        await this.loadAllClaims();
-        this.displayAllClaims();
-    }
-
-    searchClaims() {
-        const l=document.getElementById('searchLastName').value.trim().toLowerCase();
-        const f=document.getElementById('searchFirstName').value.trim().toLowerCase();
-        let filtered=this.allClaims;
-        if(l) filtered=filtered.filter(c=>c.clientInfo.lastName?.toLowerCase().includes(l));
-        if(f) filtered=filtered.filter(c=>c.clientInfo.firstName?.toLowerCase().includes(f));
-        this.displayClaims(filtered);
-    }
-
-    displayAllClaims() { this.displayClaims(this.allClaims); }
-
-    displayClaims(claims) {
-        const list=document.getElementById('claimsList');
-        if(!claims.length){ list.innerHTML='<div class="no-claims">No claims found.</div>'; return; }
-        list.innerHTML=claims.map(c=>`
-            <div class="claim-item">
-                <div class="claim-item-info" onclick="claimManager.openClaim('${c.claimId}')">
-                    <div class="claim-name">${c.claimName}</div>
-                    <div class="claim-details">${c.clientInfo.firstName||''} ${c.clientInfo.lastName||''} | ${c.claimInfo.lossType||'N/A'} | #${c.claimInfo.claimNumber||'N/A'}</div>
-                    <div class="claim-date">Created: ${c.dateCreated} | Modified: ${c.dateModified}${c.createdBy?' | '+c.createdBy:''}</div>
-                </div>
-                <div class="claim-item-actions">
-                    <button class="btn btn-primary btn-sm" onclick="claimManager.openClaim('${c.claimId}')">📂 Open</button>
-                    <button class="btn btn-danger btn-sm" onclick="claimManager.deleteClaim('${c.claimId}',event)">🗑️</button>
-                </div>
-            </div>`).join('');
-    }
-
-    openClaim(claimId) {
-        const claim=this.allClaims.find(c=>c.claimId===claimId);
-        if(!claim){ this.showStatus('Claim not found!','error'); return; }
-        this.currentClaim=claim;
-        sessionStorage.setItem('currentClaim', JSON.stringify(this.currentClaim));
-        this.updateCurrentClaimBar(); this.enableSaveButtons(); this.populateForms();
-        this.showClaimOpenedOptions();
-    }
-
-    showClaimOpenedOptions() {
-        const c=this.currentClaim.clientInfo, cl=this.currentClaim.claimInfo, ins=this.currentClaim.insuranceInfo;
-        document.getElementById('openedClientName').textContent  = `${c.firstName||''} ${c.lastName||''}`.trim()||'N/A';
-        document.getElementById('openedClaimNumber').textContent = cl.claimNumber||'N/A';
-        document.getElementById('openedLossType').textContent    = cl.lossType||'N/A';
-        document.getElementById('openedInsurance').textContent   = ins.company||'N/A';
-        document.getElementById('openedAddress').textContent     = `${c.address||''}, ${c.city||''}, ${c.state||''} ${c.zip||''}`.replace(/,\s*,/g,',').trim()||'N/A';
-        this.showScreen('claimOpenedScreen');
-        this.showStatus(`📂 Opened: ${this.currentClaim.claimName}`, 'success');
-    }
-
-    goToEstimator() { this.loadPropertyEstimator(); }
-
-    populateForms() {
-        if(!this.currentClaim) return;
-        const fill=(id,data)=>{ const f=document.getElementById(id); Object.keys(data).forEach(k=>{ const el=f.querySelector(`[name="${k}"]`); if(el) el.value=data[k]||''; }); };
-        fill('clientForm',this.currentClaim.clientInfo);
-        fill('claimForm',this.currentClaim.claimInfo);
-        fill('insuranceForm',this.currentClaim.insuranceInfo);
-    }
-
-    async loadAllClaims() {
-        try {
-            const snap=await db.collection(this.COLLECTION).orderBy('dateModified','desc').get();
-            this.allClaims=snap.docs.map(d=>d.data());
-            return this.allClaims;
-        } catch(err){ console.warn('Load error:',err); this.allClaims=[]; return []; }
-    }
-
-    updateCurrentClaimBar() {
-        const bar=document.getElementById('currentClaimBar');
-        if(this.currentClaim){
-            bar.classList.add('show');
-            document.getElementById('currentClaimName').textContent=this.currentClaim.claimName;
-            document.getElementById('currentClaimDate').textContent=`Modified: ${this.currentClaim.dateModified}`;
-        } else { bar.classList.remove('show'); }
-    }
-
-    enableSaveButtons() {
-        ['homeSaveBtn','homeSaveAsBtn'].forEach(id=>{ document.getElementById(id).disabled=false; document.getElementById(id).style.opacity='1'; });
-    }
-
-    returnHome() { if(this.currentClaim) this.saveClaim(false); this.showScreen('homeScreen'); }
-
-    showStatus(message, type='success') {
-        const el=document.getElementById('statusMessage');
-        el.textContent=message; el.className=`status-message show ${type}`;
-        clearTimeout(this._t); this._t=setTimeout(()=>el.classList.remove('show'),5000);
-    }
-
-    _today() { return new Date().toISOString().split('T')[0]; }
+function claimsEditorToCochran(f){
+return{claimId:f.claimId||'CLAIM-'+Date.now(),claimName:`${f.lastName||'Unknown'}-${f.firstName||'Unknown'}${f.insuranceClaimNumber?'-'+f.insuranceClaimNumber:''}`,dateCreated:f.dateCreated||new Date().toISOString().split('T')[0],dateModified:f.dateModified||new Date().toISOString().split('T')[0],createdBy:f.createdBy||f.updatedBy||'Claims Editor',clientInfo:{firstName:f.firstName||'',middleInitial:f.middleInitial||'',lastName:f.lastName||'',phone:f.phone||'',email:f.email||'',address:f.street1||'',address2:f.street2||'',city:f.city||'',state:f.state||'',zip:f.zip||'',organization:f.organization||''},claimInfo:{claimNumber:f.insuranceClaimNumber||'',dateOfLoss:f.dateOfLoss||'',lossType:f.lossType||f.causeOfLoss||'',description:f.descriptionOfLoss||'',reasonForClaim:f.reasonForClaim||'',estimatedLoss:f.estimatedLoss||''},insuranceInfo:{company:f.insuranceCompany||'',policyNumber:f.policyNumber||'',deductible:'',adjuster:`${f.adjusterFirst||''} ${f.adjusterLast||''}`.trim(),adjusterPhone:f.adjusterPhone||'',adjusterEmail:f.adjusterEmail||''},propertyData:null,selectedItems:[],estimate:null,_claimsEditorData:f}
 }
 
-// Estimator auto-save
-window.addEventListener('message', e => {
-    if(e.data?.type==='ESTIMATOR_DATA_UPDATED' && claimManager?.currentClaim){
-        claimManager.currentClaim.propertyData  = e.data.propertyData;
-        claimManager.currentClaim.selectedItems = e.data.selectedItems;
-        claimManager.currentClaim.estimate      = e.data.estimate;
-        claimManager.saveClaim(false);
-    }
+function cochranToClaimsEditor(n){
+const c=n.clientInfo||{},cl=n.claimInfo||{},ins=n.insuranceInfo||{};
+const ap=(ins.adjuster||'').split(' ');
+return{...(n._claimsEditorData||{}),firstName:c.firstName||'',middleInitial:c.middleInitial||'',lastName:c.lastName||'',phone:c.phone||'',email:c.email||'',street1:c.address||'',street2:c.address2||'',city:c.city||'',state:c.state||'',zip:c.zip||'',organization:c.organization||'',insuranceClaimNumber:cl.claimNumber||'',dateOfLoss:cl.dateOfLoss||'',lossType:cl.lossType||'',causeOfLoss:cl.lossType||'',descriptionOfLoss:cl.description||'',insuranceCompany:ins.company||'',policyNumber:ins.policyNumber||'',adjusterFirst:ap[0]||'',adjusterLast:ap.slice(1).join(' ')||'',adjusterPhone:ins.adjusterPhone||'',adjusterEmail:ins.adjusterEmail||'',updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:auth.currentUser?.email||'unknown'}
+}
+
+// ══ AUTH UI ═══════════════════════════════════════════════════════════════
+const authUI={mode:'signin',showSignIn(){this.mode='signin';document.getElementById('toggleSignIn').classList.add('active');document.getElementById('toggleSignUp').classList.remove('active');document.getElementById('confirmField').style.display='none';document.getElementById('authSubmit').textContent='Sign In';document.getElementById('authPassword').autocomplete='current-password';this.clearError()},showSignUp(){this.mode='signup';document.getElementById('toggleSignUp').classList.add('active');document.getElementById('toggleSignIn').classList.remove('active');document.getElementById('confirmField').style.display='block';document.getElementById('authSubmit').textContent='Create Account';document.getElementById('authPassword').autocomplete='new-password';this.clearError()},async submit(){const e=document.getElementById('authEmail').value.trim(),p=document.getElementById('authPassword').value,c=document.getElementById('authConfirm').value,b=document.getElementById('authSubmit');this.clearError();if(!e||!p){this.showError('Please enter your email and password.');return}if(this.mode==='signup'){if(p.length<6){this.showError('Password must be at least 6 characters.');return}if(p!==c){this.showError('Passwords do not match.');return}}b.disabled=true;b.textContent=this.mode==='signin'?'Signing in...':'Creating account...';try{if(this.mode==='signin'){await auth.signInWithEmailAndPassword(e,p)}else{await auth.createUserWithEmailAndPassword(e,p)}}catch(err){b.disabled=false;b.textContent=this.mode==='signin'?'Sign In':'Create Account';this.showError(this.friendlyError(err.code))}},async signOut(){if(typeof claimManager!=='undefined'&&claimManager?.currentClaim)claimManager.saveClaim(false);await auth.signOut()},showError(m){const el=document.getElementById('authError');el.textContent=m;el.classList.add('show')},clearError(){document.getElementById('authError').classList.remove('show')},friendlyError(c){const m={'auth/user-not-found':'No account found with that email.','auth/wrong-password':'Incorrect password. Please try again.','auth/invalid-email':'Please enter a valid email address.','auth/email-already-in-use':'An account with that email already exists.','auth/weak-password':'Password must be at least 6 characters.','auth/too-many-requests':'Too many attempts. Please wait and try again.','auth/invalid-credential':'Incorrect email or password.'};return m[c]||'An error occurred. Please try again.'}};
+
+['authEmail','authPassword','authConfirm'].forEach(id=>{document.getElementById(id)?.addEventListener('keydown',e=>{if(e.key==='Enter')authUI.submit()})});
+
+// ══ AUTH STATE ════════════════════════════════════════════════════════════
+let claimManager;
+auth.onAuthStateChanged(user=>{
+if(user){
+document.getElementById('authWall').style.display='none';
+document.getElementById('appShell').style.display='block';
+document.getElementById('userEmailDisplay').textContent=user.email;
+db.collection('claims').limit(1).get().then(()=>{const b=document.getElementById('firebaseBadge');b.textContent='🔥 Firebase Connected';b.classList.add('connected')}).catch(()=>{document.getElementById('firebaseBadge').textContent='⚠️ Firestore error'});
+if(!claimManager)claimManager=new ClaimManager()
+}else{
+document.getElementById('authWall').style.display='flex';
+document.getElementById('appShell').style.display='none';
+const btn=document.getElementById('authSubmit');btn.disabled=false;btn.textContent='Sign In';authUI.showSignIn();claimManager=null
+}
+});
+
+// ══ CLAIM MANAGER ═════════════════════════════════════════════════════════
+class ClaimManager{
+constructor(){this.currentClaim=null;this.allClaims=[];this.COLLECTION='claims';this.init()}
+async init(){this.setupFormHandlers();this.setupPropertyEstimatorListener();const s=sessionStorage.getItem('currentClaim');if(s){this.currentClaim=JSON.parse(s);this.updateCurrentClaimBar();this.enableSaveButtons()}await this.loadAllClaims();console.log('%c🏠 COCHRAN CLAIMS v5.2 — Claims Editor Compatible','background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:13px;font-weight:bold;padding:8px;')}
+setupPropertyEstimatorListener(){window.addEventListener('message',e=>{if(e.data?.type==='SAVE_PROPERTY_DATA')this.savePropertyData(e.data.propertyData);if(e.data?.type==='RETURN_TO_HOME')setTimeout(()=>this.showScreen('homeScreen'),500)})}
+savePropertyData(pd){if(!this.currentClaim){this.showStatus('❌ No active claim.','error');return}this.currentClaim.propertyData=pd;this.currentClaim.dateModified=this._today();sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.saveClaim(false);this.showStatus(`✅ Property data saved! (${pd.rooms?.length??0} rooms)`,'success')}
+setupFormHandlers(){document.getElementById('clientForm').addEventListener('submit',e=>{e.preventDefault();this.saveClientInfo()});document.getElementById('claimForm').addEventListener('submit',e=>{e.preventDefault();this.saveClaimInfo()});document.getElementById('insuranceForm').addEventListener('submit',e=>{e.preventDefault();this.saveInsuranceInfo()})}
+showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+newClaim(){this.currentClaim={claimId:'CLAIM-'+Date.now(),claimName:'Untitled Claim',dateCreated:this._today(),dateModified:this._today(),createdBy:auth.currentUser?.email||'unknown',clientInfo:{},claimInfo:{},insuranceInfo:{},propertyData:null,selectedItems:[],estimate:null};sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.updateCurrentClaimBar();this.enableSaveButtons();document.getElementById('clientForm').reset();document.getElementById('claimForm').reset();document.getElementById('insuranceForm').reset();this.showScreen('clientScreen');this.showStatus('New claim started!','success')}
+saveClientInfo(){const fd=new FormData(document.getElementById('clientForm'));this.currentClaim.clientInfo=Object.fromEntries(fd);this.currentClaim.claimName=`${this.currentClaim.clientInfo.lastName||'Unknown'}-${this.currentClaim.clientInfo.firstName||'Unknown'}`;sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.updateCurrentClaimBar();this.showScreen('claimScreen');this.showStatus('Client information saved!','success')}
+saveClaimInfo(){const fd=new FormData(document.getElementById('claimForm'));this.currentClaim.claimInfo=Object.fromEntries(fd);if(this.currentClaim.claimInfo.claimNumber)this.currentClaim.claimName+=`-${this.currentClaim.claimInfo.claimNumber}`;sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.updateCurrentClaimBar();this.showScreen('insuranceScreen');this.showStatus('Claim information saved!','success')}
+saveInsuranceInfo(){const fd=new FormData(document.getElementById('insuranceForm'));this.currentClaim.insuranceInfo=Object.fromEntries(fd);sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.updateCurrentClaimBar();this.saveClaim(false);this.loadPropertyEstimator();this.showStatus('Insurance saved! Loading estimator...','success')}
+loadPropertyEstimator(){this.showScreen('estimatorScreen');const iframe=document.getElementById('property-estimator-frame');const loading=document.getElementById('estimatorLoading');iframe.onload=()=>{loading.style.display='none';iframe.style.display='block';const send=()=>{try{iframe.contentWindow.postMessage({type:'LOAD_CLAIM_DATA',data:this.currentClaim},'*')}catch(e){}};send();setTimeout(send,500);setTimeout(send,1000);setTimeout(send,2000)};iframe.onerror=()=>{loading.innerHTML='<div style="color:#ef4444;font-weight:bold">❌ Error Loading Estimator</div><p style="margin-top:15px;color:#666">Make sure Property-Estimator-FIXED.html is in the same folder.</p><button class="btn btn-primary" onclick="claimManager.showScreen(\'homeScreen\')" style="margin-top:20px">Return to Home</button>'};iframe.src='Property-Estimator-FIXED.html'}
+async saveClaim(showMessage=true){if(!this.currentClaim){this.showStatus('No claim to save!','error');return false}this.currentClaim.dateModified=this._today();sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));try{const dataToSave=cochranToClaimsEditor(this.currentClaim);await db.collection(this.COLLECTION).doc(this.currentClaim.claimId).set(dataToSave);const idx=this.allClaims.findIndex(c=>c.claimId===this.currentClaim.claimId);if(idx>=0)this.allClaims[idx]=this.currentClaim;else this.allClaims.push(this.currentClaim);if(showMessage)this.showStatus(`✅ "${this.currentClaim.claimName}" saved!`,'success');return true}catch(err){console.error('Save error:',err);if(showMessage)this.showStatus('❌ Save failed: '+err.message,'error');return false}}
+showSaveAsScreen(){if(!this.currentClaim){this.showStatus('No claim to save!','error');return}document.getElementById('saveAsName').value=this.currentClaim.claimName;document.getElementById('currentSaveAsName').textContent=this.currentClaim.claimName;this.showScreen('saveAsScreen')}
+async saveClaimAs(){if(!this.currentClaim)return;const newName=document.getElementById('saveAsName').value.trim();if(!newName){this.showStatus('Please enter a name!','error');return}if(newName!==this.currentClaim.claimName)this.currentClaim.claimId='CLAIM-'+Date.now();this.currentClaim.claimName=newName;if(await this.saveClaim(false)){this.showStatus(`Saved as "${newName}"!`,'success');this.updateCurrentClaimBar();this.showScreen('homeScreen')}}
+async deleteClaim(claimId,event){if(event)event.stopPropagation();const claim=this.allClaims.find(c=>c.claimId===claimId);if(!claim||!confirm(`Delete "${claim.claimName}"?\n\nThis cannot be undone.`))return;try{await db.collection(this.COLLECTION).doc(claimId).delete();this.allClaims=this.allClaims.filter(c=>c.claimId!==claimId);if(this.currentClaim?.claimId===claimId){this.currentClaim=null;sessionStorage.removeItem('currentClaim');this.updateCurrentClaimBar();['homeSaveBtn','homeSaveAsBtn'].forEach(id=>{document.getElementById(id).disabled=true;document.getElementById(id).style.opacity='0.5'})}this.showStatus('🗑️ Claim deleted.','success');this.displayAllClaims()}catch(err){this.showStatus('❌ Delete failed: '+err.message,'error')}}
+showImportScreen(){document.getElementById('importDataField').value='';document.getElementById('importPreview').style.display='none';document.getElementById('importError').style.display='none';document.getElementById('importConfirmBtn').style.display='none';this.importedData=null;this.showScreen('importScreen')}
+previewImport(){const raw=document.getElementById('importDataField').value.trim();if(!raw){this.showImportError('Please paste some data first!');return}try{const parsed=this.parseImportData(raw);if(!parsed){this.showImportError('Could not detect format. Please check and try again.');return}this.importedData=parsed;this.showImportPreview(parsed);document.getElementById('importConfirmBtn').style.display='block'}catch(e){this.showImportError('Error: '+e.message)}}
+parseImportData(raw){if(raw.trim().startsWith('{')||raw.trim().startsWith('[')){try{return this.normalizeData(JSON.parse(raw))}catch(e){}}const lines=raw.split('\n').filter(l=>l.trim());if(lines.length>=2&&(lines[0].includes(',')||lines[0].includes('\t'))){const d=lines[0].includes('\t')?'\t':',';const h=lines[0].split(d).map(x=>x.trim().toLowerCase());const v=lines[1].split(d).map(x=>x.trim());if(h.length===v.length){const o={};h.forEach((k,i)=>o[k]=v[i]);return this.normalizeData(o)}}const kv=/^([^:]+):\s*(.+)$/;if(lines.some(l=>kv.test(l))){const o={};lines.forEach(l=>{const m=l.match(kv);if(m)o[m[1].trim().toLowerCase().replace(/\s+/g,'')]=m[2].trim()});if(Object.keys(o).length)return this.normalizeData(o)}if(lines[0]?.includes('\t')){const o={};lines.forEach(l=>{const p=l.split('\t').map(x=>x.trim());if(p.length>=2)o[p[0].toLowerCase().replace(/\s+/g,'')]=p[1]});if(Object.keys(o).length)return this.normalizeData(o)}return null}
+normalizeData(data){const km={};Object.keys(data).forEach(k=>{km[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=data[k]});const f=(...keys)=>{for(const k of keys){const n=k.toLowerCase().replace(/[^a-z0-9]/g,'');if(km[n])return km[n]}return''};const af=f('adjusterfirstname','adjusterFirst'),al=f('adjusterlastname','adjusterLast');return{clientInfo:{firstName:f('firstName','first','fname','givenname'),middleInitial:f('middleInitial','middle','mi'),lastName:f('lastName','last','lname','surname','familyname'),phone:f('phone','phoneNumber','mobile','cell','telephone'),email:f('email','emailAddress','mail'),address:f('streetAddress1','address','street','streetAddress','propertyAddress','address1'),city:f('city','town'),state:f('state','province'),zip:f('zip','zipCode','postalCode','postcode')},claimInfo:{claimNumber:f('claimNumber','claim','claimNum','claimNo','claimId','insuranceclaimnumber'),dateOfLoss:f('dateOfLoss','lossDate','incidentDate','date'),lossType:f('lossType','type','damageType','incidentType','causeoflossperil','reasonforclaim'),description:f('description','desc','details','notes','descriptionofloss')},insuranceInfo:{company:f('insuranceCompany','insurancecompanyname','insurance','insurer','carrier','company'),policyNumber:f('policyNumber','policy','policyNum','policyNo'),deductible:f('deductible','deduct','deductable'),adjuster:f('adjuster','adjusterName','agent')||(af&&al?`${af} ${al}`:af||al||''),adjusterPhone:f('adjusterPhone','adjusterPhoneNumber','agentPhone'),adjusterEmail:f('adjusterEmail','adjusterEmailAddress','agentEmail')}}}
+showImportPreview(data){document.getElementById('importError').style.display='none';const sec=(t,fs)=>{const r=fs.filter(([,v])=>v).map(([l,v])=>`<li>${l}: ${v}</li>`).join('');return r?`<div><strong>${t}</strong><ul style="margin:5px 0 0 20px">${r}</ul></div>`:''};const c=data.clientInfo,cl=data.claimInfo,i=data.insuranceInfo;let html='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px">';html+=sec('👤 Client:',[['First',c.firstName],['Last',c.lastName],['Phone',c.phone],['Email',c.email],['Address',c.address],['City',c.city],['State',c.state],['ZIP',c.zip]]);html+=sec('📋 Claim:',[['Claim #',cl.claimNumber],['Date of Loss',cl.dateOfLoss],['Loss Type',cl.lossType]]);html+=`<div style="grid-column:1/-1">${sec('🏢 Insurance:',[['Company',i.company],['Policy #',i.policyNumber],['Deductible',i.deductible],['Adjuster',i.adjuster],['Adj. Phone',i.adjusterPhone],['Adj. Email',i.adjusterEmail]])}</div>`;html+='</div>';document.getElementById('importPreviewContent').innerHTML=html;document.getElementById('importPreview').style.display='block'}
+showImportError(msg){document.getElementById('importPreview').style.display='none';document.getElementById('importConfirmBtn').style.display='none';document.getElementById('importErrorMessage').textContent=msg;document.getElementById('importError').style.display='block'}
+async importClaim(){if(!this.importedData)return;this._createClaimFromData(this.importedData);await this.saveClaim(false);this.showStatus(`📥 Imported: ${this.currentClaim.claimName}`,'success');this.showClaimOpenedOptions()}
+_createClaimFromData(data){this.currentClaim={claimId:'CLAIM-'+Date.now(),claimName:'Imported Claim',dateCreated:this._today(),dateModified:this._today(),createdBy:auth.currentUser?.email||'unknown',clientInfo:data.clientInfo||{},claimInfo:data.claimInfo||{},insuranceInfo:data.insuranceInfo||{},propertyData:null,selectedItems:[],estimate:null};const l=this.currentClaim.clientInfo.lastName||'Unknown',fi=this.currentClaim.clientInfo.firstName||'Unknown',n=this.currentClaim.claimInfo.claimNumber||'';this.currentClaim.claimName=`${l}-${fi}${n?'-'+n:''}`;sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.updateCurrentClaimBar();this.enableSaveButtons();this.populateForms()}
+async showOpenScreen(){this.showScreen('openScreen');await this.loadAllClaims();this.displayAllClaims()}
+searchClaims(){const l=document.getElementById('searchLastName').value.trim().toLowerCase();const f=document.getElementById('searchFirstName').value.trim().toLowerCase();let filtered=this.allClaims;if(l)filtered=filtered.filter(c=>c.clientInfo.lastName?.toLowerCase().includes(l));if(f)filtered=filtered.filter(c=>c.clientInfo.firstName?.toLowerCase().includes(f));this.displayClaims(filtered)}
+displayAllClaims(){this.displayClaims(this.allClaims)}
+displayClaims(claims){const list=document.getElementById('claimsList');if(!claims.length){list.innerHTML='<div class="no-claims">No claims found.</div>';return}list.innerHTML=claims.map(c=>`
+<div class="claim-item">
+<div class="claim-item-info" onclick="claimManager.openClaim('${c.claimId}')">
+<div class="claim-name">${c.claimName}</div>
+<div class="claim-details">${c.clientInfo.firstName||''} ${c.clientInfo.lastName||''} | ${c.claimInfo.lossType||'N/A'} | #${c.claimInfo.claimNumber||'N/A'}</div>
+<div class="claim-date">Created: ${c.dateCreated} | Modified: ${c.dateModified}${c.createdBy?' | '+c.createdBy:''}</div>
+</div>
+<div class="claim-item-actions">
+<button class="btn btn-primary btn-sm" onclick="claimManager.openClaim('${c.claimId}')">📂 Open</button>
+<button class="btn btn-danger btn-sm" onclick="claimManager.deleteClaim('${c.claimId}',event)">🗑️</button>
+</div>
+</div>`).join('')}
+openClaim(claimId){const claim=this.allClaims.find(c=>c.claimId===claimId);if(!claim){this.showStatus('Claim not found!','error');return}this.currentClaim=claim;sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.updateCurrentClaimBar();this.enableSaveButtons();this.populateForms();this.showClaimOpenedOptions()}
+showClaimOpenedOptions(){const c=this.currentClaim.clientInfo,cl=this.currentClaim.claimInfo,ins=this.currentClaim.insuranceInfo;document.getElementById('openedClientName').textContent=`${c.firstName||''} ${c.lastName||''}`.trim()||'N/A';document.getElementById('openedClaimNumber').textContent=cl.claimNumber||'N/A';document.getElementById('openedLossType').textContent=cl.lossType||'N/A';document.getElementById('openedInsurance').textContent=ins.company||'N/A';document.getElementById('openedAddress').textContent=`${c.address||''}, ${c.city||''}, ${c.state||''} ${c.zip||''}`.replace(/,\s*,/g,',').trim()||'N/A';this.showScreen('claimOpenedScreen');this.showStatus(`📂 Opened: ${this.currentClaim.claimName}`,'success')}
+goToEstimator(){this.loadPropertyEstimator()}
+populateForms(){if(!this.currentClaim)return;const fill=(id,data)=>{const f=document.getElementById(id);Object.keys(data).forEach(k=>{const el=f.querySelector(`[name="${k}"]`);if(el)el.value=data[k]||''})};fill('clientForm',this.currentClaim.clientInfo);fill('claimForm',this.currentClaim.claimInfo);fill('insuranceForm',this.currentClaim.insuranceInfo)}
+async loadAllClaims(){try{const snap=await db.collection(this.COLLECTION).get();this.allClaims=snap.docs.map(d=>{const data=d.data();data.claimId=data.claimId||d.id;if(isClaimsEditorFormat(data)){console.log('🔄 Converting Claims Editor claim:',data.lastName);return claimsEditorToCochran(data)}return data});this.allClaims.sort((a,b)=>{const aD=a.dateModified||a.dateCreated||"0";const bD=b.dateModified||b.dateCreated||"0";return bD.localeCompare(aD)});return this.allClaims}catch(err){console.warn('Load error:',err);this.allClaims=[];return[]}}
+updateCurrentClaimBar(){const bar=document.getElementById('currentClaimBar');if(this.currentClaim){bar.classList.add('show');document.getElementById('currentClaimName').textContent=this.currentClaim.claimName;document.getElementById('currentClaimDate').textContent=`Modified: ${this.currentClaim.dateModified}`}else{bar.classList.remove('show')}}
+enableSaveButtons(){['homeSaveBtn','homeSaveAsBtn'].forEach(id=>{document.getElementById(id).disabled=false;document.getElementById(id).style.opacity='1'})}
+returnHome(){if(this.currentClaim)this.saveClaim(false);this.showScreen('homeScreen')}
+showStatus(message,type='success'){const el=document.getElementById('statusMessage');el.textContent=message;el.className=`status-message show ${type}`;clearTimeout(this._t);this._t=setTimeout(()=>el.classList.remove('show'),5000)}
+_today(){return new Date().toISOString().split('T')[0]}
+}
+
+window.addEventListener('message',e=>{
+if(e.data?.type==='ESTIMATOR_DATA_UPDATED'&&claimManager?.currentClaim){
+claimManager.currentClaim.propertyData=e.data.propertyData;
+claimManager.currentClaim.selectedItems=e.data.selectedItems;
+claimManager.currentClaim.estimate=e.data.estimate;
+claimManager.saveClaim(false)
+}
 });
 </script>
 </body>
