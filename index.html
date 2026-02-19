@@ -406,8 +406,7 @@ const btn=document.getElementById('authSubmit');btn.disabled=false;btn.textConte
 // ══ CLAIM MANAGER ═════════════════════════════════════════════════════════
 class ClaimManager{
 constructor(){this.currentClaim=null;this.allClaims=[];this.COLLECTION='claims';this.init()}
-async init(){this.setupFormHandlers();this.setupPropertyEstimatorListener();const s=sessionStorage.getItem('currentClaim');if(s){this.currentClaim=JSON.parse(s);this.updateCurrentClaimBar();this.enableSaveButtons()}await this.loadAllClaims();console.log('%c🏠 COCHRAN CLAIMS v5.2 — Claims Editor Compatible','background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:13px;font-weight:bold;padding:8px;')}
-setupPropertyEstimatorListener(){window.addEventListener('message',e=>{if(e.data?.type==='SAVE_PROPERTY_DATA')this.savePropertyData(e.data.propertyData);if(e.data?.type==='RETURN_TO_HOME')setTimeout(()=>this.showScreen('homeScreen'),500)})}
+async init(){this.setupFormHandlers();const s=sessionStorage.getItem('currentClaim');if(s){this.currentClaim=JSON.parse(s);this.updateCurrentClaimBar();this.enableSaveButtons()}await this.loadAllClaims();console.log('%c🏠 COCHRAN CLAIMS v5.2 — Claims Editor Compatible','background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-size:13px;font-weight:bold;padding:8px;')}
 savePropertyData(pd){if(!this.currentClaim){this.showStatus('❌ No active claim.','error');return}this.currentClaim.propertyData=pd;this.currentClaim.dateModified=this._today();sessionStorage.setItem('currentClaim',JSON.stringify(this.currentClaim));this.saveClaim(false);this.showStatus(`✅ Property data saved! (${pd.rooms?.length??0} rooms)`,'success')}
 setupFormHandlers(){document.getElementById('clientForm').addEventListener('submit',e=>{e.preventDefault();this.saveClientInfo()});document.getElementById('claimForm').addEventListener('submit',e=>{e.preventDefault();this.saveClaimInfo()});document.getElementById('insuranceForm').addEventListener('submit',e=>{e.preventDefault();this.saveInsuranceInfo()})}
 showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
@@ -455,12 +454,23 @@ showStatus(message,type='success'){const el=document.getElementById('statusMessa
 _today(){return new Date().toISOString().split('T')[0]}
 }
 
-window.addEventListener('message',e=>{
-if(e.data?.type==='ESTIMATOR_DATA_UPDATED'&&claimManager?.currentClaim){
-claimManager.currentClaim.propertyData=e.data.propertyData;
-claimManager.currentClaim.selectedItems=e.data.selectedItems;
-claimManager.currentClaim.estimate=e.data.estimate;
-claimManager.saveClaim(false)
+window.addEventListener("message",e=>{
+console.log("📨 Message:",e.data?.type);
+if(!claimManager?.currentClaim)return;
+if(e.data?.type==="ESTIMATOR_DATA_UPDATED"){
+claimManager.currentClaim.propertyData=e.data.propertyData||null;
+claimManager.currentClaim.selectedItems=e.data.selectedItems||[];
+claimManager.currentClaim.estimate=e.data.estimate||null;
+claimManager.saveClaim(false);
+console.log("✅ Saved estimator data")
+}
+if(e.data?.type==="SAVE_PROPERTY_DATA"){
+claimManager.currentClaim.propertyData=e.data.propertyData||null;
+claimManager.saveClaim(false);
+console.log("✅ Saved property data")
+}
+if(e.data?.type==="RETURN_TO_HOME"){
+setTimeout(()=>claimManager.showScreen("homeScreen"),500)
 }
 });
 </script>
