@@ -22822,6 +22822,12 @@ function setDrawingMode(mode, event) {
         // Clear any feature mode
         state.currentFeature = null;
         
+        // CRITICAL: Disable room edit mode when entering wall drawing mode
+        state.roomEditMode = false;
+        state.draggingHandle = null;
+        state.hoveredHandle = null;
+        state.wallDragPreview = null;
+        
         // Clear feature button active states
         document.querySelectorAll('.feature-btn').forEach(b => b.classList.remove('active'));
         
@@ -22880,6 +22886,13 @@ function setDrawingMode(mode, event) {
         state.currentFeature = null;
         state.wallDrawingFirstCorner = null; // Clear wall drawing state
         state.wallDrawingCorners = [];
+        
+        // CRITICAL: Disable room edit mode when entering break mode
+        state.roomEditMode = false;
+        state.draggingHandle = null;
+        state.hoveredHandle = null;
+        state.wallDragPreview = null;
+        
         showToast('✂️ Break wall mode - Click a wall to cut it', 5000);
         
         const banner = document.getElementById('instructionBanner');
@@ -22912,6 +22925,12 @@ function setFeatureMode(feature, event) {
     // Clear wall drawing state
     state.wallDrawingFirstCorner = null;
     state.wallDrawingCorners = [];
+    
+    // CRITICAL: Disable room edit mode when placing features
+    state.roomEditMode = false;
+    state.draggingHandle = null;
+    state.hoveredHandle = null;
+    state.wallDragPreview = null;
     
     // Set feature placement mode
     state.currentFeature = feature;
