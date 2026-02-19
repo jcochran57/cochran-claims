@@ -6253,13 +6253,24 @@
                 // Clear any wall drawing mode
                 state.wallSelectionMode = false;
                 state.currentFeature = null;
+                state.wallDrawingCorners = [];
+                state.wallDrawingFirstCorner = null;
                 
-                // Clear other toolbar buttons
+                // Clear other toolbar buttons (but DON'T interfere with their onclick - just visual)
                 document.querySelectorAll('.toolbar-btn').forEach(b => {
                     if (b.id !== 'editShapeBtn' && b.id !== 'orthoBtn') {
                         b.classList.remove('toolbar-btn-active');
                     }
                 });
+                
+                // Update canvas cursor
+                const canvas = document.getElementById('canvas2D');
+                if (canvas) canvas.style.cursor = 'default';
+                
+                // Hide any instruction banner
+                const banner = document.getElementById('instructionBanner');
+                if (banner) banner.style.display = 'none';
+                
             } else {
                 console.log('🔧 Room shape editing DISABLED');
                 showToast('✅ Shape edit mode disabled', 2000);
