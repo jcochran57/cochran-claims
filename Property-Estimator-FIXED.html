@@ -8804,17 +8804,25 @@ function confirmCutWall() {
                 room.doors.forEach(door => {
                     if (door.wallIndex >= 0 && door.wallIndex < room.walls.length) {
                         const wall = room.walls[door.wallIndex];
-                        const positionPixels = door.position * 30; // Convert feet to pixels
+                        
+                        // Door stores width in INCHES and distanceFromLeft in FEET (left edge)
+                        const widthFeet = door.width / 12; // Convert inches to feet
+                        const edgePosition = door.distanceFromLeft; // Already in feet
+                        const centerPosition = edgePosition + (widthFeet / 2); // Center position
                         
                         // Calculate position along wall
                         const wallDx = wall.end.x - wall.start.x;
                         const wallDy = wall.end.y - wall.start.y;
                         const wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
+                        const wallLengthFeet = wallLength / 30;
                         
-                        if (wallLength > 0) {
-                            const t = positionPixels / wallLength;
-                            door.x = wall.start.x + wallDx * t;
-                            door.y = wall.start.y + wallDy * t;
+                        if (wallLengthFeet > 0) {
+                            const param = centerPosition / wallLengthFeet;
+                            door.x = wall.start.x + wallDx * param;
+                            door.y = wall.start.y + wallDy * param;
+                            
+                            // Update rotation to match wall angle
+                            door.rotation = Math.atan2(wallDy, wallDx) * 180 / Math.PI;
                         }
                     }
                 });
@@ -8825,17 +8833,25 @@ function confirmCutWall() {
                 room.windows.forEach(window => {
                     if (window.wallIndex >= 0 && window.wallIndex < room.walls.length) {
                         const wall = room.walls[window.wallIndex];
-                        const positionPixels = window.position * 30; // Convert feet to pixels
+                        
+                        // Window stores width in INCHES and distanceFromLeft in FEET (left edge)
+                        const widthFeet = window.width / 12; // Convert inches to feet
+                        const edgePosition = window.distanceFromLeft; // Already in feet
+                        const centerPosition = edgePosition + (widthFeet / 2); // Center position
                         
                         // Calculate position along wall
                         const wallDx = wall.end.x - wall.start.x;
                         const wallDy = wall.end.y - wall.start.y;
                         const wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
+                        const wallLengthFeet = wallLength / 30;
                         
-                        if (wallLength > 0) {
-                            const t = positionPixels / wallLength;
-                            window.x = wall.start.x + wallDx * t;
-                            window.y = wall.start.y + wallDy * t;
+                        if (wallLengthFeet > 0) {
+                            const param = centerPosition / wallLengthFeet;
+                            window.x = wall.start.x + wallDx * param;
+                            window.y = wall.start.y + wallDy * param;
+                            
+                            // Update rotation to match wall angle
+                            window.rotation = Math.atan2(wallDy, wallDx) * 180 / Math.PI;
                         }
                     }
                 });
