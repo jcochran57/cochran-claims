@@ -10609,6 +10609,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     const newRoomNumber = state.rooms.length + 1;
                     state.rooms.push({
                         name: `Room ${newRoomNumber}`,
+                        level: state.currentLevel,  // CRITICAL: Assign to current level!
                         floorPoints: [],
                         walls: [],
                         ceilingHeight: 8.0,
