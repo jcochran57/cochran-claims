@@ -5374,15 +5374,26 @@
         }
 
         function deleteRoom(index) {
-            if (state.rooms.length === 1) {
-                showToast('❌ Cannot delete last room');
-                return;
-            }
-            if (confirm(`Delete "${state.rooms[index].name}"?`)) {
+            const roomName = state.rooms[index].name;
+            if (confirm(`Delete "${roomName}"?`)) {
+                saveStateForUndo();
                 state.rooms.splice(index, 1);
-                state.currentRoomIndex = Math.min(state.currentRoomIndex, state.rooms.length - 1);
+                
+                // If we deleted all rooms, reset to empty state
+                if (state.rooms.length === 0) {
+                    state.currentRoomIndex = -1;
+                    showToast('✓ All rooms deleted');
+                } else {
+                    state.currentRoomIndex = Math.min(state.currentRoomIndex, state.rooms.length - 1);
+                    showToast(`✓ "${roomName}" deleted`);
+                }
+                
                 updateRoomList();
                 redraw2D();
+                // Update 3D view if in 3D mode
+                if (state.currentView === '3d') {
+                    render3D();
+                }
             }
         }
 
