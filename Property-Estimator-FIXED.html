@@ -262,19 +262,19 @@
         }
 
         #canvas3D {
-            display: none;
+            display: none !important; /* Permanently hidden */
             z-index: 2;
         }
 
         .view-3d #canvas2D {
-            display: none;
-            pointer-events: none;
+            display: block !important; /* Always show 2D */
+            pointer-events: auto !important;
             z-index: 0;
         }
 
         .view-3d #canvas3D {
-            display: block;
-            pointer-events: auto;
+            display: none !important; /* Never show 3D */
+            pointer-events: none !important;
             z-index: 2;
         }
 
@@ -1463,10 +1463,6 @@
             
             <!-- View Tools -->
             <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="switch2D()" title="2D View">
-                    <span class="btn-icon">📐</span>
-                    <span class="btn-label">2D</span>
-                </button>
                 <button class="toolbar-btn" onclick="zoomAll()" title="Zoom All - Fit entire drawing">
                     <span class="btn-icon">🔍</span>
                     <span class="btn-label">Zoom All</span>
@@ -3689,9 +3685,14 @@
             generateWallInputs();
             updateRoomList();
             updateModeIndicator();
+            
+            // FORCE 2D mode (3D is removed)
+            state.currentView = '2d';
+            document.getElementById('canvasArea').classList.remove('view-3d');
+            
             redraw2D(); // Initialize canvas rendering
             
-            console.log('✅ Canvas initialized and ready');
+            console.log('✅ Canvas initialized and ready - 2D mode active');
             
             // Add direct event listeners for zoom buttons
             document.getElementById('zoomInBtn').addEventListener('click', function() {
@@ -4803,7 +4804,9 @@
         }
 
         function init3D() {
-            console.log('=== Initializing 3D ===');
+            console.log('=== 3D Disabled - Skipping initialization ===');
+            return; // 3D view removed - do nothing
+            
             const container = document.getElementById('canvas3D');
             const area = document.getElementById('canvasArea');
             
@@ -8958,6 +8961,10 @@ function confirmCutWall() {
         }
 
         function switch3D() {
+            console.log('=== 3D view disabled ===');
+            showToast('3D view has been removed');
+            return; // 3D view removed
+            
             console.log('=== Switching to 3D view ===');
             console.log('Current rooms:', state.rooms.length);
             
