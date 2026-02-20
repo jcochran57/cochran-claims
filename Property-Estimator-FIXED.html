@@ -1463,9 +1463,21 @@
             
             <!-- View Tools -->
             <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="switch2D()" title="2D View">
+                    <span class="btn-icon">📐</span>
+                    <span class="btn-label">2D</span>
+                </button>
+                <button class="toolbar-btn" onclick="switch3D()" title="3D View">
+                    <span class="btn-icon">🏠</span>
+                    <span class="btn-label">3D</span>
+                </button>
                 <button class="toolbar-btn" onclick="zoomAll()" title="Zoom All - Fit entire drawing">
                     <span class="btn-icon">🔍</span>
                     <span class="btn-label">Zoom All</span>
+                </button>
+                <button class="toolbar-btn" id="zoomWindowBtn" onclick="startZoomWindow()" title="Zoom Window - Select area to zoom">
+                    <span class="btn-icon">⬚</span>
+                    <span class="btn-label">Zoom Window</span>
                 </button>
             </div>
             
@@ -1512,11 +1524,6 @@
                     <div class="room-header">
                         <h3>🏠 Rooms</h3>
                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <button class="add-room-btn" onclick="undo()" title="Undo last action (Ctrl+Z)" style="background: #FF9800;">↶ Undo</button>
-                            <button class="add-room-btn" onclick="showLidarImport()" title="Import LiDAR scan (.obj or .csv)" style="background: #2196F3;">📡 LiDAR</button>
-                            <button class="add-room-btn" onclick="toggleRoomShapeEdit()" title="Toggle room shape editing (drag walls to resize)" style="background: #9C27B0;">🔧 Edit Shape</button>
-                            <button class="add-room-btn" onclick="checkRoomQuality()" title="Check if room has 90° corners" style="background: #4CAF50;">✓ Check Quality</button>
-                            <button class="add-room-btn" onclick="squareUpCorners()" title="Fix angled corners to 90°" style="background: #FF5722;">⊾ Square Up</button>
                             <button class="add-room-btn" onclick="addNewRoom()">+ Add Room</button>
                         </div>
                     </div>
