@@ -11527,30 +11527,79 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             // Save for undo
             saveStateForUndo();
             
-            // Calculate the new wall endpoint
-            const dx = wall.end.x - wall.start.x;
-            const dy = wall.end.y - wall.start.y;
-            const currentLengthPixels = Math.sqrt(dx * dx + dy * dy);
-            const newLengthPixels = newLengthFeet * 30; // Convert feet to pixels
-            
-            if (currentLengthPixels === 0) return;
-            
-            // Scale the wall
-            const scale = newLengthPixels / currentLengthPixels;
-            const newDx = dx * scale;
-            const newDy = dy * scale;
-            
-            // Update wall endpoint
-            wall.end.x = wall.start.x + newDx;
-            wall.end.y = wall.start.y + newDy;
-            
-            // Update wall length
-            wall.length = newLengthFeet.toFixed(2);
-            
-            // Update the corresponding floor point
-            const p2Index = (wallIndex + 1) % room.floorPoints.length;
-            room.floorPoints[p2Index].x = wall.end.x;
-            room.floorPoints[p2Index].y = wall.end.y;
+            // For rectangular rooms (4 walls), update opposite wall too
+            if (room.floorPoints.length === 4) {
+                // Calculate which wall is opposite (across from this one)
+                // In a rectangle: wall 0 is opposite wall 2, wall 1 is opposite wall 3
+                const oppositeWallIndex = (wallIndex + 2) % 4;
+                
+                // Get the wall direction (horizontal or vertical)
+                const dx = wall.end.x - wall.start.x;
+                const dy = wall.end.y - wall.start.y;
+                const isHorizontal = Math.abs(dx) > Math.abs(dy);
+                
+                const newLengthPixels = newLengthFeet * 30; // Convert feet to pixels
+                
+                if (isHorizontal) {
+                    // Horizontal wall - move left/right
+                    const direction = dx > 0 ? 1 : -1; // Right or left
+                    
+                    // Update this wall's endpoint
+                    wall.end.x = wall.start.x + (direction * newLengthPixels);
+                    const p2Index = (wallIndex + 1) % 4;
+                    room.floorPoints[p2Index].x = wall.end.x;
+                    
+                    // Update opposite wall's endpoint to match
+                    const oppWall = room.walls[oppositeWallIndex];
+                    const oppP1Index = oppositeWallIndex;
+                    const oppP2Index = (oppositeWallIndex + 1) % 4;
+                    
+                    if (oppositeWallIndex === 0 || oppositeWallIndex === 2) {
+                        // Opposite wall runs in same direction
+                        const oppDx = oppWall.end.x - oppWall.start.x;
+                        const oppDirection = oppDx > 0 ? 1 : -1;
+                        room.floorPoints[oppP2Index].x = room.floorPoints[oppP1Index].x + (oppDirection * newLengthPixels);
+                    }
+                    
+                } else {
+                    // Vertical wall - move up/down
+                    const direction = dy > 0 ? 1 : -1; // Down or up
+                    
+                    // Update this wall's endpoint
+                    wall.end.y = wall.start.y + (direction * newLengthPixels);
+                    const p2Index = (wallIndex + 1) % 4;
+                    room.floorPoints[p2Index].y = wall.end.y;
+                    
+                    // Update opposite wall's endpoint to match
+                    const oppWall = room.walls[oppositeWallIndex];
+                    const oppP1Index = oppositeWallIndex;
+                    const oppP2Index = (oppositeWallIndex + 1) % 4;
+                    
+                    if (oppositeWallIndex === 0 || oppositeWallIndex === 2) {
+                        // Opposite wall runs in same direction
+                        const oppDy = oppWall.end.y - oppWall.start.y;
+                        const oppDirection = oppDy > 0 ? 1 : -1;
+                        room.floorPoints[oppP2Index].y = room.floorPoints[oppP1Index].y + (oppDirection * newLengthPixels);
+                    }
+                }
+                
+            } else {
+                // Non-rectangular room - just update this wall
+                const dx = wall.end.x - wall.start.x;
+                const dy = wall.end.y - wall.start.y;
+                const currentLengthPixels = Math.sqrt(dx * dx + dy * dy);
+                const newLengthPixels = newLengthFeet * 30;
+                
+                if (currentLengthPixels > 0) {
+                    const scale = newLengthPixels / currentLengthPixels;
+                    wall.end.x = wall.start.x + (dx * scale);
+                    wall.end.y = wall.start.y + (dy * scale);
+                    
+                    const p2Index = (wallIndex + 1) % room.floorPoints.length;
+                    room.floorPoints[p2Index].x = wall.end.x;
+                    room.floorPoints[p2Index].y = wall.end.y;
+                }
+            }
             
             // Rebuild all walls from points to maintain consistency
             updateRoomWallsFromPoints(room);
