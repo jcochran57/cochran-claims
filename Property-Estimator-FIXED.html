@@ -10525,6 +10525,16 @@ function confirmCutWall() {
             console.log('Room has', room.doors.length, 'doors and', room.windows.length, 'windows');
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             
+            // CHECK FOR DIMENSION LABEL CLICK FIRST (highest priority when not in tool modes)
+            if (!state.wallSelectionMode && !state.currentFeature) {
+                const dimClick = checkDimensionLabelClick(room, x, y);
+                if (dimClick) {
+                    console.log('✓ Clicked on dimension label for wall', dimClick.wallIndex);
+                    editWallLength(room, dimClick.wallIndex);
+                    return;
+                }
+            }
+            
             // MODE 1: Reposition OR Delete doors/windows - when NOT in any placement mode
             if (!state.wallSelectionMode && !state.currentFeature) {
                 console.log('✓ IN REPOSITION/DELETE MODE');
@@ -11420,6 +11430,104 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             state.panY = canvasHeight / 2 - centerY * state.zoom;
             
             document.getElementById('zoomLevel').textContent = Math.round(state.zoom * 100) + '%';
+        }
+
+        // Check if click is on a wall dimension label
+        function checkDimensionLabelClick(room, x, y) {
+            if (!room || !room.walls) return null;
+            
+            for (let i = 0; i < room.walls.length; i++) {
+                const wall = room.walls[i];
+                if (!wall || !wall.start || !wall.end) continue;
+                
+                // Calculate wall midpoint where dimension label is drawn
+                const midX = (wall.start.x + wall.end.x) / 2;
+                const midY = (wall.start.y + wall.end.y) / 2;
+                
+                // Check if click is near the midpoint
+                const distance = Math.sqrt(Math.pow(x - midX, 2) + Math.pow(y - midY, 2));
+                const clickRadius = 40 / state.zoom; // Click area radius
+                
+                if (distance < clickRadius) {
+                    return { wallIndex: i, wall: wall };
+                }
+            }
+            return null;
+        }
+        
+        // Edit wall length when dimension label is clicked
+        function editWallLength(room, wallIndex) {
+            if (!room || !room.walls || !room.walls[wallIndex]) return;
+            
+            const wall = room.walls[wallIndex];
+            const currentLength = parseFloat(wall.length);
+            
+            // Convert current length to feet-inches
+            const feet = Math.floor(currentLength);
+            const inches = Math.round((currentLength - feet) * 12);
+            const currentText = inches === 0 ? `${feet}'` : `${feet}' ${inches}"`;
+            
+            // Prompt for new length
+            const newInput = prompt(`Edit wall ${wallIndex + 1} length:\n(Enter as feet'inches" like: 21'4" or just feet like: 15)`, currentText);
+            
+            if (newInput === null) return; // User cancelled
+            
+            // Parse input
+            let newLengthFeet;
+            if (newInput.includes("'")) {
+                // Format: 21'4" or 21'
+                const parts = newInput.split("'");
+                const ft = parseInt(parts[0]) || 0;
+                const inchPart = parts[1] ? parts[1].replace('"', '').trim() : '0';
+                const inch = parseInt(inchPart) || 0;
+                newLengthFeet = ft + (inch / 12);
+            } else {
+                // Just a number (assume feet)
+                newLengthFeet = parseFloat(newInput);
+            }
+            
+            if (isNaN(newLengthFeet) || newLengthFeet <= 0) {
+                showToast('❌ Invalid length entered');
+                return;
+            }
+            
+            // Save for undo
+            saveStateForUndo();
+            
+            // Calculate the new wall endpoint
+            const dx = wall.end.x - wall.start.x;
+            const dy = wall.end.y - wall.start.y;
+            const currentLengthPixels = Math.sqrt(dx * dx + dy * dy);
+            const newLengthPixels = newLengthFeet * 30; // Convert feet to pixels
+            
+            if (currentLengthPixels === 0) return;
+            
+            // Scale the wall
+            const scale = newLengthPixels / currentLengthPixels;
+            const newDx = dx * scale;
+            const newDy = dy * scale;
+            
+            // Update wall endpoint
+            wall.end.x = wall.start.x + newDx;
+            wall.end.y = wall.start.y + newDy;
+            
+            // Update wall length
+            wall.length = newLengthFeet.toFixed(2);
+            
+            // Update the corresponding floor point
+            const p2Index = (wallIndex + 1) % room.floorPoints.length;
+            room.floorPoints[p2Index].x = wall.end.x;
+            room.floorPoints[p2Index].y = wall.end.y;
+            
+            // Rebuild all walls from points to maintain consistency
+            updateRoomWallsFromPoints(room);
+            
+            // Redraw
+            redraw2D();
+            if (state.currentView === '3d') render3D();
+            updateStats();
+            
+            showToast(`✓ Wall ${wallIndex + 1} updated to ${newLengthFeet.toFixed(1)} ft`);
         }
 
         function drawSingleRoom(room, offsetX, offsetZ, isCurrentRoom) {
