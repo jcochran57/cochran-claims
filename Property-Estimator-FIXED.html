@@ -11508,14 +11508,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             // Parse input
             let newLengthFeet;
             if (newInput.includes("'")) {
-                // Format: 21'4" or 21'
                 const parts = newInput.split("'");
                 const ft = parseInt(parts[0]) || 0;
                 const inchPart = parts[1] ? parts[1].replace('"', '').trim() : '0';
                 const inch = parseInt(inchPart) || 0;
                 newLengthFeet = ft + (inch / 12);
             } else {
-                // Just a number (assume feet)
                 newLengthFeet = parseFloat(newInput);
             }
             
@@ -11527,61 +11525,36 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             // Save for undo
             saveStateForUndo();
             
-            // For rectangular rooms (4 walls), update opposite wall too
+            // For 4-wall rooms, rebuild as perfect rectangle
             if (room.floorPoints.length === 4) {
-                // Calculate which wall is opposite (across from this one)
-                // In a rectangle: wall 0 is opposite wall 2, wall 1 is opposite wall 3
-                const oppositeWallIndex = (wallIndex + 2) % 4;
+                // Get current dimensions
+                const wall0Len = parseFloat(room.walls[0].length); // Top
+                const wall1Len = parseFloat(room.walls[1].length); // Right
+                const wall2Len = parseFloat(room.walls[2].length); // Bottom
+                const wall3Len = parseFloat(room.walls[3].length); // Left
                 
-                // Get the wall direction (horizontal or vertical)
-                const dx = wall.end.x - wall.start.x;
-                const dy = wall.end.y - wall.start.y;
-                const isHorizontal = Math.abs(dx) > Math.abs(dy);
+                // Determine width and height
+                let width, height;
                 
-                const newLengthPixels = newLengthFeet * 30; // Convert feet to pixels
-                
-                if (isHorizontal) {
-                    // Horizontal wall - move left/right
-                    const direction = dx > 0 ? 1 : -1; // Right or left
-                    
-                    // Update this wall's endpoint
-                    wall.end.x = wall.start.x + (direction * newLengthPixels);
-                    const p2Index = (wallIndex + 1) % 4;
-                    room.floorPoints[p2Index].x = wall.end.x;
-                    
-                    // Update opposite wall's endpoint to match
-                    const oppWall = room.walls[oppositeWallIndex];
-                    const oppP1Index = oppositeWallIndex;
-                    const oppP2Index = (oppositeWallIndex + 1) % 4;
-                    
-                    if (oppositeWallIndex === 0 || oppositeWallIndex === 2) {
-                        // Opposite wall runs in same direction
-                        const oppDx = oppWall.end.x - oppWall.start.x;
-                        const oppDirection = oppDx > 0 ? 1 : -1;
-                        room.floorPoints[oppP2Index].x = room.floorPoints[oppP1Index].x + (oppDirection * newLengthPixels);
-                    }
-                    
+                if (wallIndex === 0 || wallIndex === 2) {
+                    // Editing horizontal wall (top or bottom)
+                    width = newLengthFeet;
+                    height = (wall1Len + wall3Len) / 2; // Average of vertical walls
                 } else {
-                    // Vertical wall - move up/down
-                    const direction = dy > 0 ? 1 : -1; // Down or up
-                    
-                    // Update this wall's endpoint
-                    wall.end.y = wall.start.y + (direction * newLengthPixels);
-                    const p2Index = (wallIndex + 1) % 4;
-                    room.floorPoints[p2Index].y = wall.end.y;
-                    
-                    // Update opposite wall's endpoint to match
-                    const oppWall = room.walls[oppositeWallIndex];
-                    const oppP1Index = oppositeWallIndex;
-                    const oppP2Index = (oppositeWallIndex + 1) % 4;
-                    
-                    if (oppositeWallIndex === 0 || oppositeWallIndex === 2) {
-                        // Opposite wall runs in same direction
-                        const oppDy = oppWall.end.y - oppWall.start.y;
-                        const oppDirection = oppDy > 0 ? 1 : -1;
-                        room.floorPoints[oppP2Index].y = room.floorPoints[oppP1Index].y + (oppDirection * newLengthPixels);
-                    }
+                    // Editing vertical wall (left or right)
+                    height = newLengthFeet;
+                    width = (wall0Len + wall2Len) / 2; // Average of horizontal walls
                 }
+                
+                // Get the first point as anchor (bottom-left corner)
+                const anchor = room.floorPoints[0];
+                
+                // Rebuild room as perfect rectangle starting from anchor
+                // Points go: bottom-left → bottom-right → top-right → top-left
+                room.floorPoints[0] = { x: anchor.x, y: anchor.y }; // Bottom-left
+                room.floorPoints[1] = { x: anchor.x + (width * 30), y: anchor.y }; // Bottom-right
+                room.floorPoints[2] = { x: anchor.x + (width * 30), y: anchor.y - (height * 30) }; // Top-right
+                room.floorPoints[3] = { x: anchor.x, y: anchor.y - (height * 30) }; // Top-left
                 
             } else {
                 // Non-rectangular room - just update this wall
@@ -11601,7 +11574,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 }
             }
             
-            // Rebuild all walls from points to maintain consistency
+            // Rebuild all walls from points
             updateRoomWallsFromPoints(room);
             
             // Redraw
@@ -11609,7 +11582,11 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             if (state.currentView === '3d') render3D();
             updateStats();
             
-            showToast(`✓ Wall ${wallIndex + 1} updated to ${newLengthFeet.toFixed(1)} ft`);
+            if (room.floorPoints.length === 4) {
+                showToast(`✓ Room squared up to ${newLengthFeet.toFixed(1)} ft`);
+            } else {
+                showToast(`✓ Wall ${wallIndex + 1} updated to ${newLengthFeet.toFixed(1)} ft`);
+            }
         }
 
         function drawSingleRoom(room, offsetX, offsetZ, isCurrentRoom) {
