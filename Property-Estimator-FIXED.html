@@ -1457,35 +1457,15 @@
                     <span class="btn-icon">↷</span>
                     <span class="btn-label">Redo</span>
                 </button>
-                <button class="toolbar-btn" onclick="undoMultiple(5)" title="Undo last 5 changes">
-                    <span class="btn-icon">↶↶</span>
-                    <span class="btn-label">Undo 5</span>
-                </button>
-                <button class="toolbar-btn" onclick="checkRoomQuality()" title="Check Quality">
-                    <span class="btn-icon">✓</span>
-                    <span class="btn-label">Check</span>
-                </button>
             </div>
             
             <div class="toolbar-divider"></div>
             
             <!-- View Tools -->
             <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="switch2D()" title="2D View">
-                    <span class="btn-icon">📐</span>
-                    <span class="btn-label">2D</span>
-                </button>
-                <button class="toolbar-btn" onclick="switch3D()" title="3D View">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-label">3D</span>
-                </button>
                 <button class="toolbar-btn" onclick="zoomAll()" title="Zoom All - Fit entire drawing">
                     <span class="btn-icon">🔍</span>
                     <span class="btn-label">Zoom All</span>
-                </button>
-                <button class="toolbar-btn" id="zoomWindowBtn" onclick="startZoomWindow()" title="Zoom Window - Select area to zoom">
-                    <span class="btn-icon">⬚</span>
-                    <span class="btn-label">Zoom Window</span>
                 </button>
             </div>
             
@@ -15188,7 +15168,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             console.log('Rendering 3D view, total rooms:', totalRooms);
             
             if (totalRooms === 0) {
-                console.log('WARNING: No rooms with floor points to render');
+                console.log('No rooms to render - scene already cleared');
+                // Scene was already cleared above at line 15181
+                isRendering3D = false;
+                if (renderer && camera) {
+                    renderer.render(scene, camera);
+                }
                 return;
             }
             
