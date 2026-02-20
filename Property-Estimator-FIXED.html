@@ -15273,18 +15273,25 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             
             try {
                 console.log('Clearing scene objects... (Call #' + callId + ')');
-                while(scene.children.length > 3) scene.remove(scene.children[3]);
+                console.log('Scene has', scene.children.length, 'children before clearing');
+                
+                // Clear all objects except lights and camera (first 3 children)
+                // Remove in reverse order to avoid index shifting issues
+                for (let i = scene.children.length - 1; i >= 3; i--) {
+                    scene.remove(scene.children[i]);
+                }
+                
                 console.log('Scene cleared, now has', scene.children.length, 'children (Call #' + callId + ')');
                 
                 // Calculate total width needed for all rooms to adjust camera
-                const totalRooms = state.rooms.filter(r => r.floorPoints.length >= 3).length;
+                const totalRooms = state.rooms.filter(r => r.floorPoints && r.floorPoints.length >= 3).length;
                 const roomSpacing = 30;
             
             console.log('Rendering 3D view, total rooms:', totalRooms);
+            console.log('state.rooms.length:', state.rooms.length);
             
             if (totalRooms === 0) {
-                console.log('No rooms to render - scene already cleared');
-                // Scene was already cleared above at line 15181
+                console.log('✅ No rooms to render - rendering empty scene');
                 isRendering3D = false;
                 if (renderer && camera) {
                     renderer.render(scene, camera);
