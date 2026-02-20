@@ -1467,10 +1467,6 @@
                     <span class="btn-icon">📐</span>
                     <span class="btn-label">2D</span>
                 </button>
-                <button class="toolbar-btn" onclick="switch3D()" title="3D View">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-label">3D</span>
-                </button>
                 <button class="toolbar-btn" onclick="zoomAll()" title="Zoom All - Fit entire drawing">
                     <span class="btn-icon">🔍</span>
                     <span class="btn-label">Zoom All</span>
@@ -2662,6 +2658,32 @@
         <div class="dialog-field">
             <label>Width (inches)</label>
             <input type="number" id="featureWidth" value="36" min="1" max="240" step="1" onchange="updatePositionPreview()">
+        </div>
+
+        <div class="dialog-field" id="doorTypeField" style="display: none;">
+            <label>Door Type</label>
+            <select id="doorType">
+                <option value="single">Single</option>
+                <option value="double">Double</option>
+                <option value="sliding">Sliding Glass</option>
+                <option value="french">French</option>
+                <option value="bifold">Bi-fold</option>
+                <option value="pocket">Pocket</option>
+            </select>
+        </div>
+
+        <div class="dialog-field" id="windowTypeField" style="display: none;">
+            <label>Window Type</label>
+            <select id="windowType">
+                <option value="double-hung">Double Hung</option>
+                <option value="single-hung">Single Hung</option>
+                <option value="sliding">Sliding</option>
+                <option value="casement">Casement</option>
+                <option value="awning">Awning</option>
+                <option value="picture">Picture</option>
+                <option value="bay">Bay</option>
+                <option value="bow">Bow</option>
+            </select>
         </div>
 
         <div class="dialog-field" id="heightField" style="display: none;">
@@ -11170,6 +11192,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 document.getElementById('heightFieldLabel').textContent = 'Height (inches)';
                 document.getElementById('heightHelpText').textContent = 'Standard door: 80" (6\'8")';
                 
+                // Show door type selector
+                const doorTypeField = document.getElementById('doorTypeField');
+                if (doorTypeField) doorTypeField.style.display = 'block';
+                const windowTypeField = document.getElementById('windowTypeField');
+                if (windowTypeField) windowTypeField.style.display = 'none';
+                
                 // Reset width field label to inches for doors
                 const widthLabel = document.querySelector('label[for="featureWidth"]') || 
                                    document.querySelector('.dialog-field label');
@@ -11199,6 +11227,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 document.getElementById('heightFieldLabel').textContent = 'Height from Floor (feet)';
                 document.getElementById('heightHelpText').textContent = 'Enter 0 for floor-level windows';
                 
+                // Show window type selector
+                const windowTypeField = document.getElementById('windowTypeField');
+                if (windowTypeField) windowTypeField.style.display = 'block';
+                const doorTypeField = document.getElementById('doorTypeField');
+                if (doorTypeField) doorTypeField.style.display = 'none';
+                
                 // Reset width field label to inches for windows
                 const widthLabel = document.querySelector('label[for="featureWidth"]') || 
                                    document.querySelector('.dialog-field label');
@@ -11226,6 +11260,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 heightField.style.display = 'block';
                 document.getElementById('heightFieldLabel').textContent = 'Height (feet)';
                 document.getElementById('heightHelpText').textContent = 'Full height opening (floor to ceiling)';
+                
+                // Hide type selectors for openings
+                const doorTypeField = document.getElementById('doorTypeField');
+                if (doorTypeField) doorTypeField.style.display = 'none';
+                const windowTypeField = document.getElementById('windowTypeField');
+                if (windowTypeField) windowTypeField.style.display = 'none';
                 
                 // Change width field label for openings
                 const widthLabel = document.querySelector('label[for="featureWidth"]') || 
@@ -11317,6 +11357,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             
             if (state.currentFeature === 'door') {
                 const width = parseFloat(document.getElementById('featureWidth').value); // Get inches for door
+                const doorType = document.getElementById('doorType').value; // Get selected door type
                 const feature = {
                     x,
                     y,
@@ -11328,11 +11369,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 feature.height = parseFloat(document.getElementById('featureHeight').value); // Store door height in inches
                 feature.hinge = 'right'; // Default hinge side (right)
                 feature.swingDirection = 'in'; // Default swing direction (into room)
-                feature.doorType = 'single'; // Default door type
+                feature.doorType = doorType; // Use selected door type
                 room.doors.push(feature);
-                showToast(`🚪 Door added - ${(width/12).toFixed(1)} ft wide at ${edgePosition.toFixed(1)} ft from left`);
+                showToast(`🚪 ${doorType.charAt(0).toUpperCase() + doorType.slice(1)} door added - ${(width/12).toFixed(1)} ft wide`);
             } else if (state.currentFeature === 'window') {
                 const width = parseFloat(document.getElementById('featureWidth').value); // Get inches for window
+                const windowType = document.getElementById('windowType').value; // Get selected window type
                 const feature = {
                     x,
                     y,
@@ -11343,9 +11385,9 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 };
                 feature.heightFromFloor = heightFromFloor;
                 feature.height = parseFloat(document.getElementById('featureWindowHeight').value); // Get window height from input
-                feature.windowType = 'double-hung'; // Default window type
+                feature.windowType = windowType; // Use selected window type
                 room.windows.push(feature);
-                showToast(`🪟 Window added - ${(width/12).toFixed(1)} ft wide at ${edgePosition.toFixed(1)} ft from left`);
+                showToast(`🪟 ${windowType.charAt(0).toUpperCase() + windowType.slice(1).replace('-', ' ')} window added - ${(width/12).toFixed(1)} ft wide`);
             } else if (state.currentFeature === 'opening') {
                 // Add as wall cut/opening
                 if (!wall.cuts) wall.cuts = [];
