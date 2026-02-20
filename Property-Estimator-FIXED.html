@@ -3523,7 +3523,7 @@
             potentialDragIndex: null,
             potentialDragWallIndex: null,
             projectName: 'Untitled Project',
-            orthoMode: false,
+            orthoMode: true,  // ENABLED BY DEFAULT - Keep walls horizontal/vertical
             wallDrawingCorners: [],
             zoomWindowMode: false,
             zoomWindowStart: null,
@@ -3683,6 +3683,14 @@
             });
             
             console.log('✅ Zoom buttons initialized');
+            
+            // Set ortho button as active by default (since orthoMode starts as true)
+            const orthoBtn = document.getElementById('orthoBtn');
+            if (orthoBtn) {
+                orthoBtn.classList.add('toolbar-btn-active');
+                console.log('✅ Ortho mode enabled by default');
+            }
+            
             console.log('Tool ready!');
             
             // Initialize level buttons (with retry to ensure DOM is ready)
@@ -8931,6 +8939,20 @@ function confirmCutWall() {
             
             // CALCULATE CENTER IMMEDIATELY before rendering
             const totalRooms = state.rooms.filter(r => r.floorPoints && r.floorPoints.length >= 3).length;
+            
+            console.log(`Total rooms with geometry: ${totalRooms}`);
+            
+            // If no rooms, explicitly clear the scene before rendering
+            if (totalRooms === 0) {
+                console.log('⚠️ No rooms - will render empty scene');
+                if (scene) {
+                    // Clear all objects except lights/camera
+                    for (let i = scene.children.length - 1; i >= 3; i--) {
+                        scene.remove(scene.children[i]);
+                    }
+                    console.log('✅ Scene pre-cleared, children count:', scene.children.length);
+                }
+            }
             
             if (totalRooms === 1) {
                 const room = state.rooms.find(r => r.floorPoints && r.floorPoints.length >= 3);
