@@ -8973,10 +8973,15 @@ function confirmCutWall() {
             console.log('=== Switching to 3D view ===');
             console.log('Current rooms:', state.rooms.length);
             
+            showToast('Switching to 3D view...', 2000);
+            
             state.currentView = '3d';
             document.getElementById('canvasArea').classList.add('view-3d');
             document.querySelectorAll('.view-btn')[0].classList.remove('active');
             document.querySelectorAll('.view-btn')[1].classList.add('active');
+            
+            console.log('Canvas area classes:', document.getElementById('canvasArea').className);
+            console.log('Canvas3D display:', document.getElementById('canvas3D').style.display);
             
             // Show Reset Camera button in 3D view
             const resetBtn = document.getElementById('resetCameraBtn');
@@ -8989,14 +8994,20 @@ function confirmCutWall() {
             
             // If no rooms, explicitly clear the scene before rendering
             if (totalRooms === 0) {
-                console.log('⚠️ No rooms - clearing 3D scene');
+                console.log('⚠️ No rooms - clearing 3D scene and showing empty view');
                 if (scene) {
                     // Clear all objects except lights/camera
                     for (let i = scene.children.length - 1; i >= 3; i--) {
                         scene.remove(scene.children[i]);
                     }
                     console.log('✅ Scene pre-cleared, children count:', scene.children.length);
+                    // Render the empty scene
+                    if (renderer && camera) {
+                        renderer.render(scene, camera);
+                        console.log('✅ Rendered empty 3D scene');
+                    }
                 }
+                return; // Don't continue to room rendering
             }
             
             if (totalRooms === 1) {
