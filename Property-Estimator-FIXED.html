@@ -2179,8 +2179,16 @@
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">End Distance from Left (feet):</label>
             <input type="number" id="cutWallEnd" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box;" placeholder="e.g., 5.0" step="0.1" min="0">
             
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Height from Floor (feet):</label>
+            <input type="number" id="cutWallFloorDistance" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box;" placeholder="e.g., 0 for floor level" step="0.1" min="0" value="0">
+            
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Opening Height (feet):</label>
+            <input type="number" id="cutWallHeight" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box;" placeholder="e.g., 8.0 for full height" step="0.1" min="0.1" value="8.0">
+            
             <div style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #856404; border: 1px solid #ffeaa7;">
-                💡 <strong>Example:</strong> To cut 3 feet starting at 2 feet, enter Start: 2.0, End: 5.0
+                💡 <strong>Example:</strong> To cut 3 feet starting at 2 feet, enter Start: 2.0, End: 5.0<br>
+                For a door: Floor Distance: 0, Height: 6.67 (80 inches)<br>
+                For a window: Floor Distance: 3.0, Height: 4.0
             </div>
             
             <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
@@ -8285,6 +8293,8 @@ function showPositionModal(featureType, featureIndex) {
             const cut = wall.cuts[cutIdx];
             document.getElementById('cutWallStart').value = cut.startDist;
             document.getElementById('cutWallEnd').value = cut.endDist;
+            document.getElementById('cutWallFloorDistance').value = cut.floorDistance || 0;
+            document.getElementById('cutWallHeight').value = cut.height || 8.0;
 
             // Show modal + buttons
             document.getElementById('cutWallDeleteBtn').style.display = 'inline-block';
@@ -8579,6 +8589,8 @@ function confirmCutWall() {
             const wallIdx = parseInt(document.getElementById('cutWallSelect').value);
             const startDist = parseFloat(document.getElementById('cutWallStart').value);
             const endDist = parseFloat(document.getElementById('cutWallEnd').value);
+            const floorDistance = parseFloat(document.getElementById('cutWallFloorDistance').value) || 0;
+            const height = parseFloat(document.getElementById('cutWallHeight').value) || 8.0;
             
             console.log('Wall Index:', wallIdx);
             console.log('Start Distance:', startDist);
@@ -8629,11 +8641,15 @@ function confirmCutWall() {
                         if (!wall.cuts) wall.cuts = [];
                         moved.startDist = startDist;
                         moved.endDist = endDist;
+                        moved.floorDistance = floorDistance;
+                        moved.height = height;
                         wall.cuts.push(moved);
                     } else {
                         // Update in place
                         oldWall.cuts[cutIdx].startDist = startDist;
                         oldWall.cuts[cutIdx].endDist = endDist;
+                        oldWall.cuts[cutIdx].floorDistance = floorDistance;
+                        oldWall.cuts[cutIdx].height = height;
                     }
                 }
             } else {
@@ -8642,6 +8658,8 @@ function confirmCutWall() {
                 wall.cuts.push({
                     startDist: startDist,
                     endDist: endDist,
+                    floorDistance: floorDistance,
+                    height: height,
                     name: `Cut ${wall.cuts.length + 1}`
                 });
             }
