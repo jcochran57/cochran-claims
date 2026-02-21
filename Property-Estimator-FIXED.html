@@ -4814,8 +4814,7 @@
         }
 
         function init3D() {
-            console.log('=== 3D Disabled - Skipping initialization ===');
-            return; // 3D view removed - do nothing
+            console.log('=== Initializing 3D Scene ===');
             
             const container = document.getElementById('canvas3D');
             const area = document.getElementById('canvasArea');
@@ -8971,7 +8970,6 @@ function confirmCutWall() {
         }
 
         function switch3D() {
-            alert('3D button clicked! About to switch to 3D view.');
             console.log('=== Switching to 3D view ===');
             console.log('Current rooms:', state.rooms.length);
             
