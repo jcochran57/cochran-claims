@@ -22967,12 +22967,13 @@ window.addEventListener('message', (event) => {
                     // Force a render/redraw after a delay
                     setTimeout(() => {
                         console.log('🔄 Forcing UI update after delay...');
-                        if (typeof render2D === 'function') {
-                            console.log('   Calling render2D()...');
-                            render2D();
+                        if (typeof redraw2D === 'function') {
+                            console.log('   Calling redraw2D()...');
+                            redraw2D();
                         }
-                        if (typeof render3D === 'function') {
-                            console.log('   Calling render3D()...');
+                        // Only render 3D if we're actually in 3D mode
+                        if (state.currentView === '3d' && typeof render3D === 'function') {
+                            console.log('   Calling render3D() because in 3D mode...');
                             render3D();
                         }
                     }, 500);
