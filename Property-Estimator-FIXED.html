@@ -1487,9 +1487,9 @@
             
             <!-- Clear Tool -->
             <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="clearActiveToolMode()" title="Clear Active Tool (ESC)" style="background: #ffebee; border-color: #ef5350;">
-                    <span class="btn-icon">❌</span>
-                    <span class="btn-label">Clear</span>
+                <button class="toolbar-btn" onclick="clearAllRoomData()" title="Delete All Rooms and Start Fresh" style="background: #ffebee; border-color: #ef5350;">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-label">Clear All</span>
                 </button>
             </div>
         </div>
@@ -23339,6 +23339,61 @@ function setFeatureMode(feature, event) {
     
     // Redraw to show wall hover effects
     redraw2D();
+}
+
+// Clear all room data and start completely fresh
+function clearAllRoomData() {
+    if (!confirm('⚠️ DELETE ALL ROOMS?\n\nThis will permanently delete all rooms, doors, windows, and measurements.\n\nThis cannot be undone!')) {
+        return;
+    }
+    
+    console.log('🗑️ CLEARING ALL ROOM DATA');
+    
+    // Save for undo
+    saveStateForUndo();
+    
+    // Completely wipe state.rooms
+    state.rooms = [];
+    state.currentRoomIndex = -1;
+    
+    // Clear any drawing state
+    state.wallDrawingCorners = [];
+    state.wallDrawingFirstCorner = null;
+    
+    // Clear 3D scene completely
+    if (scene) {
+        console.log('💣 Clearing 3D scene');
+        while (scene.children.length > 0) {
+            const child = scene.children[0];
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(mat => mat.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+            scene.remove(child);
+        }
+        
+        // Re-add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(30, 50, 30);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+    }
+    
+    // Update UI
+    updateRoomList();
+    redraw2D();
+    if (state.currentView === '3d') {
+        render3D();
+    }
+    
+    showToast('✅ All rooms deleted - Starting fresh!', 3000);
+    console.log('✅ All room data cleared');
 }
 
 function clearActiveToolMode() {
