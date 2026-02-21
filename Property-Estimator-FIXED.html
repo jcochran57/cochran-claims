@@ -9027,6 +9027,15 @@ function confirmCutWall() {
             const resetBtn = document.getElementById('resetCameraBtn');
             if (resetBtn) resetBtn.style.display = 'inline-block';
             
+            // AGGRESSIVELY CLEAR THE SCENE FIRST
+            if (scene) {
+                console.log('🧹 Pre-clearing scene before render, current children:', scene.children.length);
+                while (scene.children.length > 2) {
+                    scene.remove(scene.children[scene.children.length - 1]);
+                }
+                console.log('✅ Scene pre-cleared to', scene.children.length, 'children');
+            }
+            
             // CALCULATE CENTER IMMEDIATELY before rendering
             const totalRooms = state.rooms.filter(r => r.floorPoints && r.floorPoints.length >= 3).length;
             
@@ -15445,13 +15454,15 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 console.log('Clearing scene objects... (Call #' + callId + ')');
                 console.log('Scene has', scene.children.length, 'children before clearing');
                 
-                // Clear all objects except lights and camera (first 3 children)
-                // Remove in reverse order to avoid index shifting issues
-                for (let i = scene.children.length - 1; i >= 3; i--) {
-                    scene.remove(scene.children[i]);
+                // AGGRESSIVE CLEAR: Remove ALL objects except the first 2 lights
+                // Clear in reverse order to avoid index shifting
+                while (scene.children.length > 2) {
+                    const child = scene.children[scene.children.length - 1];
+                    console.log('Removing child:', child.type, child.uuid);
+                    scene.remove(child);
                 }
                 
-                console.log('Scene cleared, now has', scene.children.length, 'children (Call #' + callId + ')');
+                console.log('Scene aggressively cleared, now has', scene.children.length, 'children (Call #' + callId + ')');
                 
                 // Calculate total width needed for all rooms to adjust camera
                 const totalRooms = state.rooms.filter(r => r.floorPoints && r.floorPoints.length >= 3).length;
