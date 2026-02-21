@@ -9027,13 +9027,35 @@ function confirmCutWall() {
             const resetBtn = document.getElementById('resetCameraBtn');
             if (resetBtn) resetBtn.style.display = 'inline-block';
             
-            // AGGRESSIVELY CLEAR THE SCENE FIRST
+            // NUCLEAR OPTION: Completely destroy and rebuild the scene
             if (scene) {
-                console.log('🧹 Pre-clearing scene before render, current children:', scene.children.length);
-                while (scene.children.length > 2) {
-                    scene.remove(scene.children[scene.children.length - 1]);
+                console.log('💣 NUCLEAR CLEAR: Disposing entire scene');
+                console.log('   Children before:', scene.children.length);
+                
+                // Dispose of all meshes properly
+                while (scene.children.length > 0) {
+                    const child = scene.children[0];
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => mat.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                    scene.remove(child);
                 }
-                console.log('✅ Scene pre-cleared to', scene.children.length, 'children');
+                console.log('   Children after disposal:', scene.children.length);
+                
+                // Re-add lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+                scene.add(ambientLight);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+                dirLight.position.set(30, 50, 30);
+                dirLight.castShadow = true;
+                scene.add(dirLight);
+                
+                console.log('   Lights re-added, children now:', scene.children.length);
             }
             
             // CALCULATE CENTER IMMEDIATELY before rendering
