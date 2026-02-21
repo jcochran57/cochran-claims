@@ -3777,10 +3777,31 @@
 
         // Mouse drag for panning 2D canvas
         let isPanning = false;
+        let spacebarPanning = false; // Spacebar enables pan mode
         let panStartX = 0;
         let panStartY = 0;
         let panStartPanX = 0;
         let panStartPanY = 0;
+        
+        // Listen for spacebar to enable pan mode
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.target.matches('input, textarea') && state.currentView === '2d') {
+                spacebarPanning = true;
+                const canvas = document.getElementById('canvas2D');
+                canvas.style.cursor = 'grab';
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                spacebarPanning = false;
+                const canvas = document.getElementById('canvas2D');
+                if (!isPanning) {
+                    canvas.style.cursor = 'default';
+                }
+            }
+        });
         
         // Hover state for delete mode
         let hoverClickPoint = null;
@@ -4197,8 +4218,8 @@
                 }
             }
             
-            // Middle mouse button or Shift+Left button = pan
-            if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+            // Middle mouse button, Shift+Left button, or Spacebar+Left button = pan
+            if (e.button === 1 || (e.button === 0 && e.shiftKey) || (e.button === 0 && spacebarPanning)) {
                 e.preventDefault();
                 isPanning = true;
                 panStartX = e.clientX;
@@ -7606,9 +7627,11 @@ function showPositionModal(featureType, featureIndex) {
             } else if (featureType === 'door') {
                 heightFields.style.display = 'block';
                 const heightInput = document.getElementById('positionHeightInput');
+                const floorHeightInput = document.getElementById('positionFloorHeightInput');
                 heightInput.value = feature.height || 80; // Default 80" (6'8") if not set
+                floorHeightInput.value = (feature.heightFromFloor !== undefined && feature.heightFromFloor !== null) ? feature.heightFromFloor : 0; // Doors start at floor
                 document.querySelector('#positionHeightFields label[for="positionHeightInput"]').textContent = 'Door Height (inches)';
-                document.getElementById('positionFloorHeightFields').style.display = 'none';
+                document.getElementById('positionFloorHeightFields').style.display = 'block'; // Show floor height for doors too
                 
                 // Show door swing selector and door type
                 const swingFields = document.getElementById('positionDoorSwingFields');
@@ -7789,12 +7812,16 @@ function showPositionModal(featureType, featureIndex) {
             feature.width = newWidth;
             feature.referenceCorner = referenceCorner;
             
-            // For doors, update height, swing, and door type
+            // For doors, update height, floor height, swing, and door type
             if (positionFeatureType === 'door') {
                 const newHeight = parseFloat(document.getElementById('positionHeightInput').value);
+                const newFloorHeight = parseFloat(document.getElementById('positionFloorHeightInput').value);
                 
                 if (!isNaN(newHeight) && newHeight >= 12 && newHeight <= 120) {
                     feature.height = newHeight;
+                }
+                if (!isNaN(newFloorHeight) && newFloorHeight >= 0 && newFloorHeight <= 10) {
+                    feature.heightFromFloor = newFloorHeight;
                 }
                 
                 // Save door type
