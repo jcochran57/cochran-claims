@@ -9932,7 +9932,11 @@ function confirmCutWall() {
                             // Check if this edge is shared with another room BEFORE moving
                             const sharedEdgeBefore = findRoomSharingEdge(room, edgeIndex);
                             
-                            // Move this room's wall
+                            // CRITICAL: Save which points we're about to move
+                            const movingP1 = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
+                            const movingP2 = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
+                            
+                            // Move this room's wall to preview position
                             room.floorPoints[p1Index].x = state.wallDragPreview.p1.x;
                             room.floorPoints[p1Index].y = state.wallDragPreview.p1.y;
                             room.floorPoints[p2Index].x = state.wallDragPreview.p2.x;
@@ -9944,11 +9948,29 @@ function confirmCutWall() {
                                 const adjP1Index = sharedEdgeBefore.edgeIndex;
                                 const adjP2Index = (adjP1Index + 1) % adjRoom.floorPoints.length;
                                 
-                                // Update adjacent room's matching points to keep wall aligned
-                                adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p1.x;
-                                adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p1.y;
-                                adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p2.x;
-                                adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p2.y;
+                                // CRITICAL: Find out which way the adjacent edge is oriented
+                                // If adjacent p1 matches our old p1, they're in same direction
+                                // If adjacent p1 matches our old p2, they're reversed
+                                const adjP1 = adjRoom.floorPoints[adjP1Index];
+                                const adjP2 = adjRoom.floorPoints[adjP2Index];
+                                
+                                const tolerance = 1; // 1 pixel tolerance for floating point errors
+                                const adjP1MatchesOurP1 = Math.abs(adjP1.x - movingP1.x) < tolerance && 
+                                                          Math.abs(adjP1.y - movingP1.y) < tolerance;
+                                
+                                if (adjP1MatchesOurP1) {
+                                    // Same direction: adj p1 -> our p1, adj p2 -> our p2
+                                    adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p1.x;
+                                    adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p1.y;
+                                    adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p2.x;
+                                    adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p2.y;
+                                } else {
+                                    // Reversed direction: adj p1 -> our p2, adj p2 -> our p1
+                                    adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p2.x;
+                                    adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p2.y;
+                                    adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p1.x;
+                                    adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p1.y;
+                                }
                                 
                                 updateRoomWallsFromPoints(adjRoom);
                             }
