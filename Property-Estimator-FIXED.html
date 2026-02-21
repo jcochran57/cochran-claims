@@ -8994,20 +8994,15 @@ function confirmCutWall() {
             
             // If no rooms, explicitly clear the scene before rendering
             if (totalRooms === 0) {
-                console.log('⚠️ No rooms - clearing 3D scene and showing empty view');
+                console.log('⚠️ No rooms - clearing 3D scene and will show empty view');
                 if (scene) {
                     // Clear all objects except lights/camera
                     for (let i = scene.children.length - 1; i >= 3; i--) {
                         scene.remove(scene.children[i]);
                     }
                     console.log('✅ Scene pre-cleared, children count:', scene.children.length);
-                    // Render the empty scene
-                    if (renderer && camera) {
-                        renderer.render(scene, camera);
-                        console.log('✅ Rendered empty 3D scene');
-                    }
                 }
-                return; // Don't continue to room rendering
+                // Don't return early - let render3D() handle the empty scene
             }
             
             if (totalRooms === 1) {
