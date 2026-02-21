@@ -4205,10 +4205,11 @@
                     let dy = y - state.draggingRoom.startY;
                     
                     // WALL SNAPPING: Check if any edge of the dragging room is close to another room's edge
-                    const snapTolerance = 20; // pixels (about 8 inches at 30px/ft)
+                    const snapTolerance = 30; // pixels (1 foot at 30px/ft)
                     let snapped = false;
-                    let snapOffsetX = 0;
-                    let snapOffsetY = 0;
+                    let bestSnapOffsetX = 0;
+                    let bestSnapOffsetY = 0;
+                    let bestSnapDistance = Infinity;
                     
                     const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
                     
@@ -4228,66 +4229,80 @@
                             const p1 = tempPoints[i];
                             const p2 = tempPoints[(i + 1) % tempPoints.length];
                             
+                            const edgeLength1 = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                            if (edgeLength1 < 10) continue; // Skip very short edges
+                            
                             // Check against each edge of other room
                             for (let j = 0; j < otherRoom.floorPoints.length; j++) {
                                 const op1 = otherRoom.floorPoints[j];
                                 const op2 = otherRoom.floorPoints[(j + 1) % otherRoom.floorPoints.length];
                                 
-                                // Check if edges are parallel and close
+                                const edgeLength2 = Math.sqrt(Math.pow(op2.x - op1.x, 2) + Math.pow(op2.y - op1.y, 2));
+                                if (edgeLength2 < 10) continue; // Skip very short edges
+                                
+                                // Check if edges are parallel and aligned
                                 const dx1 = p2.x - p1.x;
                                 const dy1 = p2.y - p1.y;
                                 const dx2 = op2.x - op1.x;
                                 const dy2 = op2.y - op1.y;
                                 
-                                const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-                                const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                                // Normalize directions
+                                const dir1x = dx1 / edgeLength1;
+                                const dir1y = dy1 / edgeLength1;
+                                const dir2x = dx2 / edgeLength2;
+                                const dir2y = dy2 / edgeLength2;
                                 
-                                if (len1 > 0 && len2 > 0) {
-                                    // Normalize directions
-                                    const dir1x = dx1 / len1;
-                                    const dir1y = dy1 / len1;
-                                    const dir2x = dx2 / len2;
-                                    const dir2y = dy2 / len2;
+                                // Check if parallel (dot product close to ±1)
+                                const dot = dir1x * dir2x + dir1y * dir2y;
+                                
+                                if (Math.abs(dot) > 0.98) { // Nearly parallel (within 11 degrees)
+                                    // Calculate distances between all endpoint combinations
+                                    const p1ToOp1 = Math.sqrt(Math.pow(p1.x - op1.x, 2) + Math.pow(p1.y - op1.y, 2));
+                                    const p2ToOp2 = Math.sqrt(Math.pow(p2.x - op2.x, 2) + Math.pow(p2.y - op2.y, 2));
+                                    const p1ToOp2 = Math.sqrt(Math.pow(p1.x - op2.x, 2) + Math.pow(p1.y - op2.y, 2));
+                                    const p2ToOp1 = Math.sqrt(Math.pow(p2.x - op1.x, 2) + Math.pow(p2.y - op1.y, 2));
                                     
-                                    // Check if parallel (dot product close to 1 or -1)
-                                    const dot = Math.abs(dir1x * dir2x + dir1y * dir2y);
+                                    // Check if edges can snap (both endpoints within tolerance)
+                                    let canSnap = false;
+                                    let snapDist = 0;
+                                    let offsetX = 0;
+                                    let offsetY = 0;
                                     
-                                    if (dot > 0.95) { // Nearly parallel
-                                        // Check if endpoints are close
-                                        const p1ToOp1 = Math.sqrt(Math.pow(p1.x - op1.x, 2) + Math.pow(p1.y - op1.y, 2));
-                                        const p2ToOp2 = Math.sqrt(Math.pow(p2.x - op2.x, 2) + Math.pow(p2.y - op2.y, 2));
-                                        const p1ToOp2 = Math.sqrt(Math.pow(p1.x - op2.x, 2) + Math.pow(p1.y - op2.y, 2));
-                                        const p2ToOp1 = Math.sqrt(Math.pow(p2.x - op1.x, 2) + Math.pow(p2.y - op1.y, 2));
-                                        
-                                        // If edges align (forward or reverse)
-                                        if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) ||
-                                            (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
-                                            
-                                            // Calculate snap offset to align perfectly
-                                            if (p1ToOp1 < p1ToOp2) {
-                                                snapOffsetX = op1.x - p1.x;
-                                                snapOffsetY = op1.y - p1.y;
-                                            } else {
-                                                snapOffsetX = op2.x - p1.x;
-                                                snapOffsetY = op2.y - p1.y;
-                                            }
-                                            
-                                            snapped = true;
-                                            break;
-                                        }
+                                    // Forward alignment: p1->op1, p2->op2
+                                    if (p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) {
+                                        canSnap = true;
+                                        snapDist = (p1ToOp1 + p2ToOp2) / 2;
+                                        offsetX = op1.x - p1.x;
+                                        offsetY = op1.y - p1.y;
+                                    }
+                                    // Reverse alignment: p1->op2, p2->op1
+                                    else if (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance) {
+                                        canSnap = true;
+                                        snapDist = (p1ToOp2 + p2ToOp1) / 2;
+                                        offsetX = op2.x - p1.x;
+                                        offsetY = op2.y - p1.y;
+                                    }
+                                    
+                                    // Use the closest snap if multiple walls could snap
+                                    if (canSnap && snapDist < bestSnapDistance) {
+                                        bestSnapDistance = snapDist;
+                                        bestSnapOffsetX = offsetX;
+                                        bestSnapOffsetY = offsetY;
+                                        snapped = true;
                                     }
                                 }
                             }
-                            if (snapped) break;
                         }
-                        if (snapped) break;
                     }
                     
                     // Apply snap offset if snapped
                     if (snapped) {
-                        dx += snapOffsetX;
-                        dy += snapOffsetY;
+                        dx += bestSnapOffsetX;
+                        dy += bestSnapOffsetY;
                         canvas2D.style.cursor = 'crosshair'; // Visual feedback for snap
+                    } else {
+                        canvas2D.style.cursor = 'move';
+                    }
                     } else {
                         canvas2D.style.cursor = 'move';
                     }
@@ -9929,6 +9944,11 @@ function confirmCutWall() {
                             const p1Index = edgeIndex;
                             const p2Index = (edgeIndex + 1) % room.floorPoints.length;
                             
+                            console.log('🔧 EXPANDING ROOM:', room.name);
+                            console.log('  Dragging edge:', edgeIndex, '(points', p1Index, 'and', p2Index, ')');
+                            console.log('  Total points in room:', room.floorPoints.length);
+                            console.log('  BEFORE - All points:', room.floorPoints.map((p, i) => `[${i}]: (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(' | '));
+                            
                             // Check if this edge is shared with another room BEFORE moving
                             const sharedEdgeBefore = findRoomSharingEdge(room, edgeIndex);
                             
@@ -9936,11 +9956,16 @@ function confirmCutWall() {
                             const movingP1 = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
                             const movingP2 = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
                             
-                            // Move this room's wall to preview position
+                            console.log('  OLD positions - p1[' + p1Index + ']:', movingP1, ' p2[' + p2Index + ']:', movingP2);
+                            console.log('  NEW positions - p1:', state.wallDragPreview.p1, ' p2:', state.wallDragPreview.p2);
+                            
+                            // Move ONLY these 2 points - DO NOT TOUCH OTHER POINTS!
                             room.floorPoints[p1Index].x = state.wallDragPreview.p1.x;
                             room.floorPoints[p1Index].y = state.wallDragPreview.p1.y;
                             room.floorPoints[p2Index].x = state.wallDragPreview.p2.x;
                             room.floorPoints[p2Index].y = state.wallDragPreview.p2.y;
+                            
+                            console.log('  AFTER - All points:', room.floorPoints.map((p, i) => `[${i}]: (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(' | '));
                             
                             // If this edge WAS shared, update the adjacent room's matching edge
                             if (sharedEdgeBefore) {
