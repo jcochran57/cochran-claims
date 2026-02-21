@@ -1548,19 +1548,20 @@
             align-items: center; 
             justify-content: space-between; 
             box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
-            min-height: 50px;
+            min-height: 60px;
+            max-height: 80px;
             ">
             
             <!-- Left: Room Tabs -->
-            <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow-x: auto;">
-                <button class="add-room-btn" onclick="addNewRoom()" style="padding: 8px 15px; font-size: 13px; min-width: auto; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">+ Add Room</button>
-                <div id="roomList" style="display: flex; gap: 5px; align-items: center;"></div>
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow-x: auto; overflow-y: hidden; max-width: calc(100% - 300px); padding: 5px 0;">
+                <button class="add-room-btn" onclick="addNewRoom()" style="padding: 8px 15px; font-size: 13px; min-width: auto; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; flex-shrink: 0;">+ Add Room</button>
+                <div id="roomList" style="display: flex; gap: 5px; align-items: center; flex-wrap: nowrap;"></div>
             </div>
             
             <!-- Right: Level Selector -->
-            <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 8px 12px; border-radius: 5px; border: 2px solid #999;">
+            <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 8px 12px; border-radius: 5px; border: 2px solid #999; flex-shrink: 0;">
                 <span style="font-weight: 700; color: #333; font-size: 13px;">LEVEL:</span>
-                <div id="levelButtons" style="display: flex; gap: 5px;">
+                <div id="levelButtons" style="display: flex; gap: 5px; flex-wrap: wrap;">
                     <!-- Level buttons will be generated here -->
                 </div>
                 <span id="levelRoomCount" style="font-weight: 600; color: #666; font-size: 12px; margin-left: 5px;">
@@ -4200,10 +4201,98 @@
                 const room = state.rooms[state.draggingRoom.roomIndex];
                 if (room && room.floorPoints) {
                     // Calculate offset from drag start
-                    const dx = x - state.draggingRoom.startX;
-                    const dy = y - state.draggingRoom.startY;
+                    let dx = x - state.draggingRoom.startX;
+                    let dy = y - state.draggingRoom.startY;
                     
-                    // Move all floor points
+                    // WALL SNAPPING: Check if any edge of the dragging room is close to another room's edge
+                    const snapTolerance = 20; // pixels (about 8 inches at 30px/ft)
+                    let snapped = false;
+                    let snapOffsetX = 0;
+                    let snapOffsetY = 0;
+                    
+                    const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                    
+                    // Calculate temporary new positions
+                    const tempPoints = state.draggingRoom.originalPoints.map(p => ({
+                        x: p.x + dx,
+                        y: p.y + dy
+                    }));
+                    
+                    // Check each edge of the dragging room against each edge of other rooms
+                    for (const otherRoom of roomsOnLevel) {
+                        if (otherRoom === room) continue;
+                        if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
+                        
+                        // Check each edge of dragging room
+                        for (let i = 0; i < tempPoints.length; i++) {
+                            const p1 = tempPoints[i];
+                            const p2 = tempPoints[(i + 1) % tempPoints.length];
+                            
+                            // Check against each edge of other room
+                            for (let j = 0; j < otherRoom.floorPoints.length; j++) {
+                                const op1 = otherRoom.floorPoints[j];
+                                const op2 = otherRoom.floorPoints[(j + 1) % otherRoom.floorPoints.length];
+                                
+                                // Check if edges are parallel and close
+                                const dx1 = p2.x - p1.x;
+                                const dy1 = p2.y - p1.y;
+                                const dx2 = op2.x - op1.x;
+                                const dy2 = op2.y - op1.y;
+                                
+                                const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                                const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                                
+                                if (len1 > 0 && len2 > 0) {
+                                    // Normalize directions
+                                    const dir1x = dx1 / len1;
+                                    const dir1y = dy1 / len1;
+                                    const dir2x = dx2 / len2;
+                                    const dir2y = dy2 / len2;
+                                    
+                                    // Check if parallel (dot product close to 1 or -1)
+                                    const dot = Math.abs(dir1x * dir2x + dir1y * dir2y);
+                                    
+                                    if (dot > 0.95) { // Nearly parallel
+                                        // Check if endpoints are close
+                                        const p1ToOp1 = Math.sqrt(Math.pow(p1.x - op1.x, 2) + Math.pow(p1.y - op1.y, 2));
+                                        const p2ToOp2 = Math.sqrt(Math.pow(p2.x - op2.x, 2) + Math.pow(p2.y - op2.y, 2));
+                                        const p1ToOp2 = Math.sqrt(Math.pow(p1.x - op2.x, 2) + Math.pow(p1.y - op2.y, 2));
+                                        const p2ToOp1 = Math.sqrt(Math.pow(p2.x - op1.x, 2) + Math.pow(p2.y - op1.y, 2));
+                                        
+                                        // If edges align (forward or reverse)
+                                        if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) ||
+                                            (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
+                                            
+                                            // Calculate snap offset to align perfectly
+                                            if (p1ToOp1 < p1ToOp2) {
+                                                snapOffsetX = op1.x - p1.x;
+                                                snapOffsetY = op1.y - p1.y;
+                                            } else {
+                                                snapOffsetX = op2.x - p1.x;
+                                                snapOffsetY = op2.y - p1.y;
+                                            }
+                                            
+                                            snapped = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (snapped) break;
+                        }
+                        if (snapped) break;
+                    }
+                    
+                    // Apply snap offset if snapped
+                    if (snapped) {
+                        dx += snapOffsetX;
+                        dy += snapOffsetY;
+                        canvas2D.style.cursor = 'crosshair'; // Visual feedback for snap
+                    } else {
+                        canvas2D.style.cursor = 'move';
+                    }
+                    
+                    // Move all floor points with final offset (including snap)
                     for (let i = 0; i < room.floorPoints.length; i++) {
                         room.floorPoints[i].x = state.draggingRoom.originalPoints[i].x + dx;
                         room.floorPoints[i].y = state.draggingRoom.originalPoints[i].y + dy;
