@@ -8959,14 +8959,34 @@ function confirmCutWall() {
         }
 
         function switch2D() {
+            console.log('=== Switching to 2D view ===');
+            
             state.currentView = '2d';
-            document.getElementById('canvasArea').classList.remove('view-3d');
+            
+            const canvasArea = document.getElementById('canvasArea');
+            const canvas3D = document.getElementById('canvas3D');
+            const canvas2D = document.getElementById('canvas2D');
+            
+            // Remove 3D class
+            canvasArea.classList.remove('view-3d');
+            
+            // Force canvas visibility
+            canvas2D.style.display = 'block';
+            canvas3D.style.display = 'none';
+            
+            console.log('Switched to 2D - canvas2D display:', canvas2D.style.display);
+            console.log('Switched to 2D - canvas3D display:', canvas3D.style.display);
+            
             document.querySelectorAll('.view-btn')[0].classList.add('active');
             document.querySelectorAll('.view-btn')[1].classList.remove('active');
             
             // Hide Reset Camera button in 2D view
             const resetBtn = document.getElementById('resetCameraBtn');
             if (resetBtn) resetBtn.style.display = 'none';
+            
+            // Redraw 2D view
+            redraw2D();
+            console.log('2D view redrawn');
         }
 
         function switch3D() {
