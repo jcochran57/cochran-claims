@@ -1407,97 +1407,68 @@
             </div>
         </div>
         
-        <!-- Xactimate-style Icon Toolbar -->
-        <div class="xactimate-toolbar">
-            <!-- Room/Shape Tools -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="addNewRoom()" title="Add Room">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-label">Room</span>
+        <!-- Xactimate-style Icon Toolbar with Dropdowns -->
+        <div style="background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 1px solid #ccc; padding: 2px 8px; display: flex; align-items: center; gap: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            
+            <!-- Room Tools -->
+            <div style="display: flex; align-items: center; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button onclick="addNewRoom()" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 12px;" title="Add Room">
+                    <span style="font-size: 16px;">🏠</span>
+                    <span>Room</span>
+                    <span style="font-size: 10px;">▼</span>
                 </button>
             </div>
-            
-            <div class="toolbar-divider"></div>
             
             <!-- Wall Tools -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn toolbar-btn-active" onclick="setDrawingMode('wall', event)" title="Draw Wall">
-                    <span class="btn-icon">📏</span>
-                    <span class="btn-label">Wall</span>
-                </button>
-                <button class="toolbar-btn" id="orthoBtn" onclick="toggleOrthoMode()" title="Ortho Mode - Snap to H/V">
-                    <span class="btn-icon">⊞</span>
-                    <span class="btn-label">Ortho</span>
-                </button>
-                <button class="toolbar-btn" onclick="setDrawingMode('break', event)" title="Break Wall">
-                    <span class="btn-icon">✂️</span>
-                    <span class="btn-label">Break</span>
+            <div style="display: flex; align-items: center; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button onclick="setDrawingMode('wall', event)" id="wallToolBtn" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 12px;" title="Draw Wall">
+                    <span style="font-size: 16px;">📐</span>
+                    <span>Wall</span>
+                    <span style="font-size: 10px;">▼</span>
                 </button>
             </div>
             
-            <div class="toolbar-divider"></div>
+            <!-- Features: Door, Window, Opening -->
+            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button onclick="setFeatureMode('door', event)" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Door">🚪</button>
+                <button onclick="setFeatureMode('window', event)" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Window">🪟</button>
+                <button onclick="setFeatureMode('opening', event)" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Opening">⬜</button>
+            </div>
             
-            <!-- Feature Tools -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="setFeatureMode('door', event)" title="Place Door">
-                    <span class="btn-icon">🚪</span>
-                    <span class="btn-label">Door</span>
-                </button>
-                <button class="toolbar-btn" onclick="setFeatureMode('window', event)" title="Place Window">
-                    <span class="btn-icon">🪟</span>
-                    <span class="btn-label">Window</span>
-                </button>
-                <button class="toolbar-btn" onclick="setFeatureMode('opening', event)" title="Place Opening">
-                    <span class="btn-icon">⬜</span>
-                    <span class="btn-label">Opening</span>
+            <!-- Break Tool -->
+            <div style="display: flex; align-items: center; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button onclick="setDrawingMode('break', event)" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 12px;" title="Break Wall">
+                    <span style="font-size: 16px;">✂️</span>
+                    <span>Break</span>
                 </button>
             </div>
             
-            <div class="toolbar-divider"></div>
-            
-            <!-- Undo/Redo Tools -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="undo()" title="Undo last change (Ctrl+Z)">
-                    <span class="btn-icon">↶</span>
-                    <span class="btn-label">Undo</span>
-                </button>
-                <button class="toolbar-btn" onclick="redo()" title="Redo last undone change (Ctrl+Y)">
-                    <span class="btn-icon">↷</span>
-                    <span class="btn-label">Redo</span>
-                </button>
+            <!-- Ortho, Rotate, Orientation -->
+            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button id="orthoBtn" onclick="toggleOrthoMode()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Ortho Mode">⊞</button>
+                <button onclick="zoomAll()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Zoom All">🔍</button>
             </div>
             
-            <div class="toolbar-divider"></div>
-            
-            <!-- View Tools -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="switch2D()" title="2D View" style="background: #2196F3; color: white; border-color: #1976D2;">
-                    <span class="btn-icon">📐</span>
-                    <span class="btn-label" style="color: white;">2D</span>
-                </button>
-                <button class="toolbar-btn" onclick="switch3D()" title="3D View" style="background: #FF9800; color: white; border-color: #F57C00;">
-                    <span class="btn-icon">🏠</span>
-                    <span class="btn-label" style="color: white;">3D</span>
-                </button>
-                <button class="toolbar-btn" onclick="zoomAll()" title="Zoom All - Fit entire drawing">
-                    <span class="btn-icon">🔍</span>
-                    <span class="btn-label">Zoom All</span>
-                </button>
-                <button class="toolbar-btn" id="zoomWindowBtn" onclick="startZoomWindow()" title="Zoom Window - Select area to zoom">
-                    <span class="btn-icon">⬚</span>
-                    <span class="btn-label">Zoom Window</span>
-                </button>
+            <!-- View: 2D/3D -->
+            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button onclick="switch2D()" style="padding: 3px 8px; background: #4CAF50; color: white; border: 1px solid #4CAF50; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600;" title="2D View">2D</button>
+                <button onclick="switch3D()" style="padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 11px;" title="3D View">3D</button>
             </div>
             
-            <div class="toolbar-divider"></div>
+            <!-- Undo/Redo -->
+            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
+                <button onclick="undo()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Undo (Ctrl+Z)">↶</button>
+                <button onclick="redo()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Redo (Ctrl+Y)">↷</button>
+            </div>
             
-            <!-- Clear Tool -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn" onclick="clearAllRoomData()" title="Delete All Rooms and Start Fresh" style="background: #ffebee; border-color: #ef5350;">
-                    <span class="btn-icon">🗑️</span>
-                    <span class="btn-label">Clear All</span>
+            <!-- Clear All -->
+            <div style="display: flex; align-items: center;">
+                <button onclick="clearAllRoomData()" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #ffebee; border: 1px solid #ef5350; border-radius: 3px; cursor: pointer; font-size: 12px; color: #c62828;" title="Clear All Rooms">
+                    <span style="font-size: 14px;">🗑️</span>
+                    <span>Clear</span>
                 </button>
             </div>
+        </div>
         </div>
         
         <div class="top-bar" style="display: none;">
