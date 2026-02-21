@@ -3780,8 +3780,8 @@
                 }
             }
             
-            // ===== ROOM NAME CLICK DETECTION - Activate handles like Xactimate =====
-            // Allow clicking room names even when already in edit mode (for room switching)
+            // ===== ROOM NAME CLICK DETECTION - Drag entire room =====
+            // Allow clicking room names to drag the entire room
             if (e.button === 0) {
                 // Check all rooms to see if we clicked on a room name
                 for (let i = 0; i < state.rooms.length; i++) {
@@ -3796,33 +3796,26 @@
                         if (x >= centerX - halfWidth && x <= centerX + halfWidth &&
                             y >= centerY - halfHeight && y <= centerY + halfHeight) {
                             
-                            // Switch to this room and activate edit mode
+                            // Save state for undo
+                            saveStateForUndo();
+                            
+                            // Start dragging the entire room
+                            state.draggingRoom = {
+                                roomIndex: i,
+                                startX: x,
+                                startY: y,
+                                originalPoints: room.floorPoints.map(p => ({...p}))
+                            };
+                            
+                            // Switch to this room
                             state.currentRoomIndex = i;
-                            state.roomEditMode = true;
-                            
-                            // ONLY clear feature modes if we're NOT actively placing a feature
-                            if (!state.currentFeature) {
-                                state.wallSelectionMode = false;
-                            }
-                            
-                            state.draggingHandle = null; // Clear any active handle dragging
-                            state.hoveredHandle = null; // Clear handle hover
-                            
-                            // Clear toolbar buttons
-                            document.querySelectorAll('.toolbar-btn').forEach(btn => {
-                                btn.classList.remove('toolbar-btn-active');
-                            });
-                            
                             updateRoomList();
-                            canvas2D.style.cursor = 'default';
                             
-                            // Show room properties modal
-                            showRoomProperties(i);
+                            canvas2D.style.cursor = 'move';
                             
-                            console.log(`✅ Clicked room name: ${room.name} - properties shown, handles activated`);
+                            console.log(`✅ Started dragging room: ${room.name}`);
                             
                             redraw2D();
-                            updateStats();
                             return;
                         }
                     }
@@ -4174,6 +4167,63 @@
             state.mouseY = clickY;
             state.mouseWorldX = x;
             state.mouseWorldY = y;
+            
+            // ===== ROOM NAME HOVER DETECTION - Show move cursor =====
+            if (!state.draggingRoom && !state.draggingHandle && e.button !== 1) { // Not if already dragging or middle mouse
+                let hoveringRoomName = false;
+                // Check all rooms to see if hovering over a room name
+                for (let i = 0; i < state.rooms.length; i++) {
+                    const room = state.rooms[i];
+                    if (room.nameBounds && room.floorPoints && room.floorPoints.length > 0) {
+                        const centerX = room.nameBounds.x;
+                        const centerY = room.nameBounds.y;
+                        const halfWidth = room.nameBounds.width / 2;
+                        const halfHeight = room.nameBounds.height / 2;
+                        
+                        // Check if mouse is within room name bounds
+                        if (x >= centerX - halfWidth && x <= centerX + halfWidth &&
+                            y >= centerY - halfHeight && y <= centerY + halfHeight) {
+                            canvas2D.style.cursor = 'move';
+                            hoveringRoomName = true;
+                            break;
+                        }
+                    }
+                }
+                // Reset cursor if not hovering over room name
+                if (!hoveringRoomName && !state.hoveredHandle) {
+                    canvas2D.style.cursor = 'default';
+                }
+            }
+            
+            // ===== ROOM DRAGGING =====
+            if (state.draggingRoom) {
+                const room = state.rooms[state.draggingRoom.roomIndex];
+                if (room && room.floorPoints) {
+                    // Calculate offset from drag start
+                    const dx = x - state.draggingRoom.startX;
+                    const dy = y - state.draggingRoom.startY;
+                    
+                    // Move all floor points
+                    for (let i = 0; i < room.floorPoints.length; i++) {
+                        room.floorPoints[i].x = state.draggingRoom.originalPoints[i].x + dx;
+                        room.floorPoints[i].y = state.draggingRoom.originalPoints[i].y + dy;
+                    }
+                    
+                    // Move all walls (they reference the floor points, so they'll update automatically)
+                    // But we also need to update any absolute positions
+                    if (room.walls) {
+                        room.walls.forEach((wall, idx) => {
+                            const p1Index = idx;
+                            const p2Index = (idx + 1) % room.floorPoints.length;
+                            wall.start = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
+                            wall.end = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
+                        });
+                    }
+                    
+                    redraw2D();
+                    return;
+                }
+            }
             
             // ===== ROOM EDIT MODE HANDLE DRAGGING =====
             if (state.roomEditMode && state.draggingHandle) {
@@ -9750,6 +9800,23 @@ function confirmCutWall() {
 
         canvas2D.addEventListener('mouseup', (e) => {
             if (state.currentView !== '2d') return; // Only handle in 2D mode
+            
+            // ===== ROOM DRAG END =====
+            if (state.draggingRoom) {
+                console.log(`✅ Finished dragging room`);
+                state.draggingRoom = null;
+                canvas2D.style.cursor = 'default';
+                
+                // Recalculate walls from the new positions
+                const room = getCurrentRoom();
+                if (room) {
+                    updateRoomWallsFromPoints(room);
+                }
+                
+                redraw2D();
+                updateStats();
+                return;
+            }
             
             // ===== ROOM EDIT MODE HANDLE DRAG END =====
             if (state.draggingHandle) {
