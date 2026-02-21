@@ -8971,13 +8971,34 @@ function confirmCutWall() {
         }
 
         function switch3D() {
+            alert('3D button clicked! About to switch to 3D view.');
             console.log('=== Switching to 3D view ===');
             console.log('Current rooms:', state.rooms.length);
             
             showToast('Switching to 3D view...', 2000);
             
             state.currentView = '3d';
-            document.getElementById('canvasArea').classList.add('view-3d');
+            
+            const canvasArea = document.getElementById('canvasArea');
+            const canvas3D = document.getElementById('canvas3D');
+            const canvas2D = document.getElementById('canvas2D');
+            
+            console.log('canvasArea element:', canvasArea);
+            console.log('canvas3D element:', canvas3D);
+            console.log('canvas2D element:', canvas2D);
+            
+            // Force the class change
+            canvasArea.classList.add('view-3d');
+            console.log('Added view-3d class');
+            console.log('canvasArea classes:', canvasArea.className);
+            
+            // Force canvas visibility
+            canvas2D.style.display = 'none';
+            canvas3D.style.display = 'block';
+            console.log('Forced canvas display styles');
+            console.log('canvas2D display:', canvas2D.style.display);
+            console.log('canvas3D display:', canvas3D.style.display);
+            
             document.querySelectorAll('.view-btn')[0].classList.remove('active');
             document.querySelectorAll('.view-btn')[1].classList.add('active');
             
