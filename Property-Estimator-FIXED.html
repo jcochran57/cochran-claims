@@ -9941,11 +9941,6 @@ function confirmCutWall() {
                             const p1Index = edgeIndex;
                             const p2Index = (edgeIndex + 1) % room.floorPoints.length;
                             
-                            console.log('🔧 EXPANDING ROOM:', room.name);
-                            console.log('  Dragging edge:', edgeIndex, '(points', p1Index, 'and', p2Index, ')');
-                            console.log('  Total points in room:', room.floorPoints.length);
-                            console.log('  BEFORE - All points:', room.floorPoints.map((p, i) => `[${i}]: (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(' | '));
-                            
                             // Check if this edge is shared with another room BEFORE moving
                             const sharedEdgeBefore = findRoomSharingEdge(room, edgeIndex);
                             
@@ -9953,16 +9948,11 @@ function confirmCutWall() {
                             const movingP1 = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
                             const movingP2 = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
                             
-                            console.log('  OLD positions - p1[' + p1Index + ']:', movingP1, ' p2[' + p2Index + ']:', movingP2);
-                            console.log('  NEW positions - p1:', state.wallDragPreview.p1, ' p2:', state.wallDragPreview.p2);
-                            
                             // Move ONLY these 2 points - DO NOT TOUCH OTHER POINTS!
                             room.floorPoints[p1Index].x = state.wallDragPreview.p1.x;
                             room.floorPoints[p1Index].y = state.wallDragPreview.p1.y;
                             room.floorPoints[p2Index].x = state.wallDragPreview.p2.x;
                             room.floorPoints[p2Index].y = state.wallDragPreview.p2.y;
-                            
-                            console.log('  AFTER - All points:', room.floorPoints.map((p, i) => `[${i}]: (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join(' | '));
                             
                             // If this edge WAS shared, update the adjacent room's matching edge
                             if (sharedEdgeBefore) {
