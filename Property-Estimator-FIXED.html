@@ -4650,6 +4650,7 @@
                     let snapped = false;
                     let snapDx = 0;
                     let snapDy = 0;
+                    let minSnapDist = Infinity;
                     
                     // Get all rooms on current level except the one being dragged
                     const roomsOnLevel = state.rooms.filter((r, idx) => 
@@ -4687,23 +4688,32 @@
                                 const dir2y = (op2.y - op1.y) / edgeLen2;
                                 const dot = dir1x * dir2x + dir1y * dir2y;
                                 
-                                if (Math.abs(dot) > 0.98) { // Nearly parallel
-                                    // Check if edges are close and aligned
-                                    const dist1 = Math.sqrt(Math.pow(p1.x - op1.x, 2) + Math.pow(p1.y - op1.y, 2));
-                                    const dist2 = Math.sqrt(Math.pow(p2.x - op2.x, 2) + Math.pow(p2.y - op2.y, 2));
+                                if (Math.abs(dot) > 0.98) { // Nearly parallel (within ~11 degrees)
+                                    // Calculate perpendicular distance between the two parallel edges
+                                    // Use perpendicular vector to dir1
+                                    const perpX = -dir1y;
+                                    const perpY = dir1x;
                                     
-                                    if (dist1 < snapTolerance && dist2 < snapTolerance) {
-                                        // Snap to align perfectly
-                                        snapDx = op1.x - p1.x;
-                                        snapDy = op1.y - p1.y;
+                                    // Vector from p1 to op1
+                                    const toOtherX = op1.x - p1.x;
+                                    const toOtherY = op1.y - p1.y;
+                                    
+                                    // Distance between parallel lines
+                                    const perpDist = Math.abs(toOtherX * perpX + toOtherY * perpY);
+                                    
+                                    if (perpDist < snapTolerance && perpDist < minSnapDist) {
+                                        // Calculate snap offset to align edges perfectly
+                                        // Project the offset onto the perpendicular direction
+                                        const snapOffset = toOtherX * perpX + toOtherY * perpY;
+                                        snapDx = perpX * snapOffset;
+                                        snapDy = perpY * snapOffset;
                                         snapped = true;
-                                        break;
+                                        minSnapDist = perpDist;
+                                        console.log(`Wall snap detected: ${perpDist.toFixed(1)}px distance`);
                                     }
                                 }
                             }
-                            if (snapped) break;
                         }
-                        if (snapped) break;
                     }
                     
                     // Apply snap if found
