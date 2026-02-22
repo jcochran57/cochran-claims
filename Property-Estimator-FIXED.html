@@ -1443,9 +1443,10 @@
                 </button>
             </div>
             
-            <!-- Ortho, Rotate, Orientation -->
+            <!-- Ortho, Snap, Zoom -->
             <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button id="orthoBtn" onclick="toggleOrthoMode()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Ortho Mode">⊞</button>
+                <button id="orthoBtn" onclick="toggleOrthoMode()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Ortho Mode (Keep walls straight)">⊞</button>
+                <button id="snapBtn" onclick="toggleSnapMode()" style="padding: 3px 6px; background: #4CAF50; color: white; border: 1px solid #4CAF50; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Snap Mode (ON - walls snap together)">🧲</button>
                 <button onclick="zoomAll()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Zoom All">🔍</button>
             </div>
             
@@ -3501,6 +3502,7 @@
             potentialDragWallIndex: null,
             projectName: 'Untitled Project',
             orthoMode: true,  // ENABLED BY DEFAULT - Keep walls horizontal/vertical
+            snapMode: true,   // ENABLED BY DEFAULT - Snap walls when dragging
             wallDrawingCorners: [],
             zoomWindowMode: false,
             zoomWindowStart: null,
@@ -4215,8 +4217,10 @@
                     let dy = y - state.draggingRoom.startY;
                     
                     // WALL SNAPPING: Check if any edge of the dragging room is close to another room's edge
-                    const snapTolerance = 30; // pixels (1 foot at 30px/ft)
-                    let snapped = false;
+                    // Only snap if snapMode is enabled
+                    if (state.snapMode) {
+                        const snapTolerance = 30; // pixels (1 foot at 30px/ft)
+                        let snapped = false;
                     let bestSnapOffsetX = 0;
                     let bestSnapOffsetY = 0;
                     let bestSnapDistance = Infinity;
@@ -4303,18 +4307,21 @@
                                 }
                             }
                         }
-                    }
                     
-                    // Apply snap offset if snapped
-                    if (snapped) {
-                        dx += bestSnapOffsetX;
-                        dy += bestSnapOffsetY;
-                        canvas2D.style.cursor = 'crosshair'; // Visual feedback for snap
+                        // Apply snap offset if snapped
+                        if (snapped) {
+                            dx += bestSnapOffsetX;
+                            dy += bestSnapOffsetY;
+                            canvas2D.style.cursor = 'crosshair'; // Visual feedback for snap
+                        } else {
+                            canvas2D.style.cursor = 'move';
+                        }
                     } else {
+                        // Snap mode disabled - just use move cursor
                         canvas2D.style.cursor = 'move';
                     }
                     
-                    // Move all floor points with final offset (including snap)
+                    // Move all floor points with final offset (including snap if enabled)
                     for (let i = 0; i < room.floorPoints.length; i++) {
                         room.floorPoints[i].x = state.draggingRoom.originalPoints[i].x + dx;
                         room.floorPoints[i].y = state.draggingRoom.originalPoints[i].y + dy;
@@ -4393,54 +4400,57 @@
                         };
                         
                         // SNAP TO WALL: Check if preview wall is near another room's wall
-                        const snapTolerance = 30; // 30 pixels = 1 foot
-                        const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
-                        
-                        for (const otherRoom of roomsOnLevel) {
-                            if (otherRoom === room) continue;
-                            if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
+                        // Only snap if snapMode is enabled
+                        if (state.snapMode) {
+                            const snapTolerance = 30; // 30 pixels = 1 foot
+                            const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
                             
-                            // Check each edge of other room
-                            for (let i = 0; i < otherRoom.floorPoints.length; i++) {
-                                const op1 = otherRoom.floorPoints[i];
-                                const op2 = otherRoom.floorPoints[(i + 1) % otherRoom.floorPoints.length];
+                            for (const otherRoom of roomsOnLevel) {
+                                if (otherRoom === room) continue;
+                                if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
                                 
-                                // Calculate distance from preview wall endpoints to other wall endpoints
-                                const p1ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op1.x, 2) + 
-                                                         Math.pow(state.wallDragPreview.p1.y - op1.y, 2));
-                                const p2ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op2.x, 2) + 
-                                                         Math.pow(state.wallDragPreview.p2.y - op2.y, 2));
-                                const p1ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op2.x, 2) + 
-                                                         Math.pow(state.wallDragPreview.p1.y - op2.y, 2));
-                                const p2ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op1.x, 2) + 
-                                                         Math.pow(state.wallDragPreview.p2.y - op1.y, 2));
-                                
-                                // Check if preview wall is close to this wall (either direction)
-                                if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) ||
-                                    (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
-                                    // SNAP! Align preview wall to match other room's wall exactly
-                                    if (p1ToOp1 < p1ToOp2) {
-                                        // Forward alignment
-                                        state.wallDragPreview.p1.x = op1.x;
-                                        state.wallDragPreview.p1.y = op1.y;
-                                        state.wallDragPreview.p2.x = op2.x;
-                                        state.wallDragPreview.p2.y = op2.y;
-                                    } else {
-                                        // Reverse alignment
-                                        state.wallDragPreview.p1.x = op2.x;
-                                        state.wallDragPreview.p1.y = op2.y;
-                                        state.wallDragPreview.p2.x = op1.x;
-                                        state.wallDragPreview.p2.y = op1.y;
+                                // Check each edge of other room
+                                for (let i = 0; i < otherRoom.floorPoints.length; i++) {
+                                    const op1 = otherRoom.floorPoints[i];
+                                    const op2 = otherRoom.floorPoints[(i + 1) % otherRoom.floorPoints.length];
+                                    
+                                    // Calculate distance from preview wall endpoints to other wall endpoints
+                                    const p1ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op1.x, 2) + 
+                                                             Math.pow(state.wallDragPreview.p1.y - op1.y, 2));
+                                    const p2ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op2.x, 2) + 
+                                                             Math.pow(state.wallDragPreview.p2.y - op2.y, 2));
+                                    const p1ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op2.x, 2) + 
+                                                             Math.pow(state.wallDragPreview.p1.y - op2.y, 2));
+                                    const p2ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op1.x, 2) + 
+                                                             Math.pow(state.wallDragPreview.p2.y - op1.y, 2));
+                                    
+                                    // Check if preview wall is close to this wall (either direction)
+                                    if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) ||
+                                        (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
+                                        // SNAP! Align preview wall to match other room's wall exactly
+                                        if (p1ToOp1 < p1ToOp2) {
+                                            // Forward alignment
+                                            state.wallDragPreview.p1.x = op1.x;
+                                            state.wallDragPreview.p1.y = op1.y;
+                                            state.wallDragPreview.p2.x = op2.x;
+                                            state.wallDragPreview.p2.y = op2.y;
+                                        } else {
+                                            // Reverse alignment
+                                            state.wallDragPreview.p1.x = op2.x;
+                                            state.wallDragPreview.p1.y = op2.y;
+                                            state.wallDragPreview.p2.x = op1.x;
+                                            state.wallDragPreview.p2.y = op1.y;
+                                        }
+                                        state.wallDragPreview.snapped = true;
+                                        // Update distance after snap
+                                        const newDx = state.wallDragPreview.p1.x - state.draggingHandle.p1StartX;
+                                        const newDy = state.wallDragPreview.p1.y - state.draggingHandle.p1StartY;
+                                        state.wallDragPreview.distance = Math.sqrt(newDx * newDx + newDy * newDy) / 30;
+                                        break;
                                     }
-                                    state.wallDragPreview.snapped = true;
-                                    // Update distance after snap
-                                    const newDx = state.wallDragPreview.p1.x - state.draggingHandle.p1StartX;
-                                    const newDy = state.wallDragPreview.p1.y - state.draggingHandle.p1StartY;
-                                    state.wallDragPreview.distance = Math.sqrt(newDx * newDx + newDy * newDy) / 30;
-                                    break;
                                 }
                             }
-                        }
+                        } // End of snapMode check
                         
                         redraw2D();
                         updateStats();
@@ -9945,48 +9955,12 @@ function confirmCutWall() {
                             room.floorPoints[p2Index].x = state.wallDragPreview.p2.x;
                             room.floorPoints[p2Index].y = state.wallDragPreview.p2.y;
                             
-                            // If this edge WAS shared, update the adjacent room's matching edge
-                            if (sharedEdgeBefore) {
-                                const adjRoom = sharedEdgeBefore.room;
-                                const adjP1Index = sharedEdgeBefore.edgeIndex;
-                                const adjP2Index = (adjP1Index + 1) % adjRoom.floorPoints.length;
-                                
-                                // CRITICAL: Find out which way the adjacent edge is oriented
-                                // If adjacent p1 matches our old p1, they're in same direction
-                                // If adjacent p1 matches our old p2, they're reversed
-                                const adjP1 = adjRoom.floorPoints[adjP1Index];
-                                const adjP2 = adjRoom.floorPoints[adjP2Index];
-                                
-                                const tolerance = 5; // 5 pixel tolerance for matching
-                                const dist_adjP1_to_movingP1 = Math.sqrt(Math.pow(adjP1.x - movingP1.x, 2) + Math.pow(adjP1.y - movingP1.y, 2));
-                                const dist_adjP1_to_movingP2 = Math.sqrt(Math.pow(adjP1.x - movingP2.x, 2) + Math.pow(adjP1.y - movingP2.y, 2));
-                                
-                                console.log('🔧 Shared wall update:');
-                                console.log('  Our room:', room.name, '- moving points', p1Index, 'and', p2Index);
-                                console.log('  Adjacent room:', adjRoom.name, '- points', adjP1Index, 'and', adjP2Index);
-                                console.log('  Distance adjP1 to our old P1:', dist_adjP1_to_movingP1.toFixed(1));
-                                console.log('  Distance adjP1 to our old P2:', dist_adjP1_to_movingP2.toFixed(1));
-                                
-                                if (dist_adjP1_to_movingP1 < tolerance) {
-                                    // Same direction: adj p1 -> our p1, adj p2 -> our p2
-                                    console.log('  ✅ Same direction - updating normally');
-                                    adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p1.x;
-                                    adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p1.y;
-                                    adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p2.x;
-                                    adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p2.y;
-                                } else if (dist_adjP1_to_movingP2 < tolerance) {
-                                    // Reversed direction: adj p1 -> our p2, adj p2 -> our p1
-                                    console.log('  🔄 Reversed direction - swapping points');
-                                    adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p2.x;
-                                    adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p2.y;
-                                    adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p1.x;
-                                    adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p1.y;
-                                } else {
-                                    console.warn('  ⚠️ Could not determine direction - distances too large!');
-                                }
-                                
-                                updateRoomWallsFromPoints(adjRoom);
-                            }
+                            // CRITICAL CHANGE: Do NOT update adjacent room!
+                            // When stretching a shared wall, the adjacent room stays anchored
+                            // This prevents the dragged room from moving - it just stretches
+                            // The shared wall will become unshared after stretching
+                            
+                            console.log('✅ Wall stretched - shared wall is now independent');
                             
                             // CRITICAL: Check if the NEW position creates a shared wall with ANY room
                             // This handles the case where expanding creates a NEW shared wall
@@ -17109,6 +17083,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             window.startZoomWindow = startZoomWindow;
             window.setDrawingMode = setDrawingMode;
             window.toggleOrthoMode = toggleOrthoMode;
+            window.toggleSnapMode = toggleSnapMode;
             window.setFeatureMode = setFeatureMode;
             window.toggleLeftPanel = toggleLeftPanel;
             window.selectFeature = selectFeature;
@@ -23619,6 +23594,27 @@ function toggleOrthoMode() {
     if (state.wallSelectionMode && !state.currentFeature) {
         redraw2D();
     }
+}
+
+function toggleSnapMode() {
+    state.snapMode = !state.snapMode;
+    
+    const snapBtn = document.getElementById('snapBtn');
+    if (state.snapMode) {
+        snapBtn.style.background = '#4CAF50';
+        snapBtn.style.color = 'white';
+        snapBtn.style.border = '1px solid #4CAF50';
+        snapBtn.title = 'Snap Mode (ON - walls snap together)';
+        showToast('🧲 SNAP ON - Walls snap together', 3000);
+    } else {
+        snapBtn.style.background = 'white';
+        snapBtn.style.color = '#333';
+        snapBtn.style.border = '1px solid #ccc';
+        snapBtn.title = 'Snap Mode (OFF - free positioning)';
+        showToast('🧲 SNAP OFF - Free positioning', 2000);
+    }
+    
+    console.log('Snap mode:', state.snapMode ? 'ON' : 'OFF');
 }
 
 function zoomAll() {
