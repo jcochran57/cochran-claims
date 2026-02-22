@@ -1534,68 +1534,7 @@
         </div>
 
         <div class="main-content">
-            <div class="left-panel" id="leftPanel">
-                <button class="panel-collapse-btn" onclick="toggleLeftPanel()" title="Collapse/Expand panel">◀</button>
-                <div class="room-manager">
-                    <div class="room-header">
-                        <h3>🏠 Rooms</h3>
-                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <button class="add-room-btn" onclick="undo()" title="Undo last action (Ctrl+Z)" style="background: #FF9800;">↶ Undo</button>
-                            <button class="add-room-btn" onclick="showLidarImport()" title="Import LiDAR scan (.obj or .csv)" style="background: #2196F3;">📡 LiDAR</button>
-                            <button class="add-room-btn" onclick="enterEditMode()" title="Edit current room layout" style="background: #9C27B0;">📐 Edit Room</button>
-                            <button class="add-room-btn" onclick="checkRoomQuality()" title="Check if room has 90° corners" style="background: #4CAF50;">✓ Check Quality</button>
-                            <button class="add-room-btn" onclick="squareUpCorners()" title="Fix angled corners to 90°" style="background: #FF5722;">⊾ Square Up</button>
-                            <button class="add-room-btn" onclick="addNewRoom()">+ Add Room</button>
-                        </div>
-                    </div>
-                    <div class="room-list" id="roomList"></div>
-                </div>
-
-                <div class="panel-content">
-                    <h3 style="margin-bottom: 15px;">Current Room Setup</h3>
-                    
-                    <div class="form-group">
-                        <label>Number of Walls</label>
-                        <select id="wallCount" onchange="generateWallInputs()">
-                            <option value="3">3 Walls</option>
-                            <option value="4" selected>4 Walls</option>
-                            <option value="5">5 Walls</option>
-                            <option value="6">6 Walls</option>
-                            <option value="7">7 Walls</option>
-                            <option value="8">8 Walls</option>
-                            <option value="9">9 Walls</option>
-                            <option value="10">10 Walls</option>
-                            <option value="11">11 Walls</option>
-                            <option value="12">12 Walls</option>
-                        </select>
-                    </div>
-
-                    <div id="wallInputs"></div>
-
-                    <div class="form-group">
-                        <label>Ceiling Height (ft)</label>
-                        <input type="number" id="ceilingHeight" value="8.0" step="0.1">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Wall Thickness (inches)</label>
-                        <input type="number" id="wallThickness" value="4" min="4" max="24" step="1">
-                    </div>
-
-                    <button class="btn" id="applyMeasurementsBtn" style="width: 100%;">
-                        ✓ Apply Measurements
-                    </button>
-
-                    <h4 style="margin: 20px 0 10px 0;">Add Features</h4>
-                    <div class="feature-grid">
-                        <button class="feature-btn" id="doorBtn" onclick="selectFeature('door', event)">🚪 Door</button>
-                        <button class="feature-btn" id="windowBtn" onclick="selectFeature('window', event)">🪟 Window</button>
-                        <button class="feature-btn" id="openingBtn" onclick="selectFeature('opening', event)">🔓 Opening</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="canvas-area" id="canvasArea">
+            <div class="canvas-area" id="canvasArea" style="width: 100%; margin-left: 0;">
                 <canvas id="canvas2D"></canvas>
                 <div id="canvas3D"></div>
 
@@ -1642,19 +1581,6 @@
                 <button class="clear-mode-btn" id="clearModeBtn" onclick="clearAllModes()" style="display: none;">
                     ❌ Clear Mode
                 </button>
-            </div>
-        </div>
-
-        <div class="bottom-toolbar">
-            <div>
-                <button class="btn" onclick="saveProject()">💾 Save Project</button>
-                <button class="btn" onclick="loadProject()">📂 Load</button>
-            </div>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <div style="font-weight: 600; color: #1e3c72; font-size: 15px;">
-                    📋 <span id="projectNameDisplay">Untitled Project</span>
-                </div>
-                <div id="coordinates" style="color: #666;">Ready</div>
             </div>
         </div>
     </div>
