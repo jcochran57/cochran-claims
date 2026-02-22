@@ -145,32 +145,26 @@
         }
 
         .room-list {
-            display: flex;
-            gap: 5px;
-            align-items: center;
+            max-height: 150px;
+            overflow-y: auto;
         }
 
         .room-item {
-            padding: 6px 12px;
+            padding: 12px;
+            margin-bottom: 6px;
             background: white;
-            border: 1px solid #ccc;
-            border-radius: 4px 4px 0 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-            font-size: 13px;
-            transition: all 0.2s;
         }
 
         .room-item.active {
-            background: #4CAF50;
+            background: #1e3c72;
             color: white;
-            border-color: #4CAF50;
-            font-weight: 600;
         }
-
 
         .room-delete {
             width: 24px;
@@ -269,21 +263,19 @@
 
         #canvas3D {
             display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #87CEEB; /* Sky blue background */
             z-index: 2;
         }
 
         .view-3d #canvas2D {
-            display: none !important;
+            display: none;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .view-3d #canvas3D {
-            display: block !important;
+            display: block;
+            pointer-events: auto;
+            z-index: 2;
         }
 
         .zoom-controls {
@@ -1407,66 +1399,111 @@
             </div>
         </div>
         
-        <!-- Xactimate-style Icon Toolbar with Dropdowns -->
-        <div style="background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 1px solid #ccc; padding: 2px 8px; display: flex; align-items: center; gap: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            
-            <!-- Room Tools -->
-            <div style="display: flex; align-items: center; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button onclick="addNewRoom()" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 12px;" title="Add Room">
-                    <span style="font-size: 16px;">🏠</span>
-                    <span>Room</span>
-                    <span style="font-size: 10px;">▼</span>
+        <!-- Xactimate-style Icon Toolbar -->
+        <div class="xactimate-toolbar">
+            <!-- Room/Shape Tools -->
+            <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="addNewRoom()" title="Add Room">
+                    <span class="btn-icon">🏠</span>
+                    <span class="btn-label">Room</span>
+                </button>
+                <button class="toolbar-btn" onclick="showLidarImport()" title="Import LiDAR">
+                    <span class="btn-icon">📡</span>
+                    <span class="btn-label">LiDAR</span>
                 </button>
             </div>
+            
+            <div class="toolbar-divider"></div>
             
             <!-- Wall Tools -->
-            <div style="display: flex; align-items: center; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button onclick="setDrawingMode('wall', event)" id="wallToolBtn" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 12px;" title="Draw Wall">
-                    <span style="font-size: 16px;">📐</span>
-                    <span>Wall</span>
-                    <span style="font-size: 10px;">▼</span>
+            <div class="toolbar-group">
+                <button class="toolbar-btn toolbar-btn-active" onclick="setDrawingMode('wall', event)" title="Draw Wall">
+                    <span class="btn-icon">📏</span>
+                    <span class="btn-label">Wall</span>
+                </button>
+                <button class="toolbar-btn" id="orthoBtn" onclick="toggleOrthoMode()" title="Ortho Mode - Snap to H/V">
+                    <span class="btn-icon">⊞</span>
+                    <span class="btn-label">Ortho</span>
+                </button>
+                <button class="toolbar-btn" onclick="setDrawingMode('break', event)" title="Break Wall">
+                    <span class="btn-icon">✂️</span>
+                    <span class="btn-label">Break</span>
                 </button>
             </div>
             
-            <!-- Features: Door, Window, Opening -->
-            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button onclick="setFeatureMode('door', event)" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Door">🚪</button>
-                <button onclick="setFeatureMode('window', event)" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Window">🪟</button>
-                <button onclick="setFeatureMode('opening', event)" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Opening">⬜</button>
-            </div>
+            <div class="toolbar-divider"></div>
             
-            <!-- Break Tool -->
-            <div style="display: flex; align-items: center; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button onclick="setDrawingMode('break', event)" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 12px;" title="Break Wall">
-                    <span style="font-size: 16px;">✂️</span>
-                    <span>Break</span>
+            <!-- Feature Tools -->
+            <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="setFeatureMode('door', event)" title="Place Door">
+                    <span class="btn-icon">🚪</span>
+                    <span class="btn-label">Door</span>
+                </button>
+                <button class="toolbar-btn" onclick="setFeatureMode('window', event)" title="Place Window">
+                    <span class="btn-icon">🪟</span>
+                    <span class="btn-label">Window</span>
+                </button>
+                <button class="toolbar-btn" onclick="setFeatureMode('opening', event)" title="Place Opening">
+                    <span class="btn-icon">⬜</span>
+                    <span class="btn-label">Opening</span>
                 </button>
             </div>
             
-            <!-- Ortho, Snap, Zoom -->
-            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button id="orthoBtn" onclick="toggleOrthoMode()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Ortho Mode (Keep walls straight)">⊞</button>
-                <button id="snapBtn" onclick="toggleSnapMode()" style="padding: 3px 6px; background: #4CAF50; color: white; border: 1px solid #4CAF50; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Snap Mode (ON - walls snap together)">🧲</button>
-                <button onclick="zoomAll()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Zoom All">🔍</button>
+            <div class="toolbar-divider"></div>
+            
+            <!-- Edit Tools -->
+            <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="enterEditMode()" title="Edit Mode">
+                    <span class="btn-icon">📐</span>
+                    <span class="btn-label">Edit</span>
+                </button>
+                <button class="toolbar-btn" onclick="undo()" title="Undo last change (Ctrl+Z)">
+                    <span class="btn-icon">↶</span>
+                    <span class="btn-label">Undo</span>
+                </button>
+                <button class="toolbar-btn" onclick="redo()" title="Redo last undone change (Ctrl+Y)">
+                    <span class="btn-icon">↷</span>
+                    <span class="btn-label">Redo</span>
+                </button>
+                <button class="toolbar-btn" onclick="undoMultiple(5)" title="Undo last 5 changes">
+                    <span class="btn-icon">↶↶</span>
+                    <span class="btn-label">Undo 5</span>
+                </button>
+                <button class="toolbar-btn" onclick="checkRoomQuality()" title="Check Quality">
+                    <span class="btn-icon">✓</span>
+                    <span class="btn-label">Check</span>
+                </button>
             </div>
             
-            <!-- View: 2D/3D -->
-            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button onclick="switch2D()" style="padding: 3px 8px; background: #4CAF50; color: white; border: 1px solid #4CAF50; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600;" title="2D View">2D</button>
-                <button onclick="switch3D()" style="padding: 3px 8px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 11px;" title="3D View">3D</button>
+            <div class="toolbar-divider"></div>
+            
+            <!-- View Tools -->
+            <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="switch2D()" title="2D View">
+                    <span class="btn-icon">📐</span>
+                    <span class="btn-label">2D</span>
+                </button>
+                <button class="toolbar-btn" onclick="switch3D()" title="3D View">
+                    <span class="btn-icon">🏠</span>
+                    <span class="btn-label">3D</span>
+                </button>
+                <button class="toolbar-btn" onclick="zoomAll()" title="Zoom All - Fit entire drawing">
+                    <span class="btn-icon">🔍</span>
+                    <span class="btn-label">Zoom All</span>
+                </button>
+                <button class="toolbar-btn" id="zoomWindowBtn" onclick="startZoomWindow()" title="Zoom Window - Select area to zoom">
+                    <span class="btn-icon">⬚</span>
+                    <span class="btn-label">Zoom Window</span>
+                </button>
             </div>
             
-            <!-- Undo/Redo -->
-            <div style="display: flex; gap: 2px; border-right: 1px solid #ddd; padding-right: 4px; margin-right: 4px;">
-                <button onclick="undo()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Undo (Ctrl+Z)">↶</button>
-                <button onclick="redo()" style="padding: 3px 6px; background: white; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 16px;" title="Redo (Ctrl+Y)">↷</button>
-            </div>
+            <div class="toolbar-divider"></div>
             
-            <!-- Clear All -->
-            <div style="display: flex; align-items: center;">
-                <button onclick="clearAllRoomData()" style="display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #ffebee; border: 1px solid #ef5350; border-radius: 3px; cursor: pointer; font-size: 12px; color: #c62828;" title="Clear All Rooms">
-                    <span style="font-size: 14px;">🗑️</span>
-                    <span>Clear</span>
+            <!-- Clear Tool -->
+            <div class="toolbar-group">
+                <button class="toolbar-btn" onclick="clearActiveToolMode()" title="Clear Active Tool (ESC)" style="background: #ffebee; border-color: #ef5350;">
+                    <span class="btn-icon">❌</span>
+                    <span class="btn-label">Clear</span>
                 </button>
             </div>
         </div>
@@ -1485,10 +1522,80 @@
             </div>
         </div>
 
-        <!-- LEVEL/FLOOR SELECTOR - Will be moved to bottom -->
+        <!-- LEVEL/FLOOR SELECTOR - PROMINENT -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-bottom: 3px solid #5a67d8; padding: 15px 20px; display: flex; align-items: center; gap: 15px; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            <span style="font-weight: 700; color: white; font-size: 16px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">📍 LEVEL:</span>
+            <div id="levelButtons" style="display: flex; gap: 8px;">
+                <!-- Level buttons will be generated here -->
+            </div>
+            <span id="levelRoomCount" style="font-weight: 600; color: white; font-size: 14px; margin-left: 10px; opacity: 0.9;">
+                <!-- Room count will appear here -->
+            </span>
+        </div>
 
         <div class="main-content">
-            <div class="canvas-area" id="canvasArea" style="width: 100%; left: 0;">
+            <div class="left-panel" id="leftPanel">
+                <button class="panel-collapse-btn" onclick="toggleLeftPanel()" title="Collapse/Expand panel">◀</button>
+                <div class="room-manager">
+                    <div class="room-header">
+                        <h3>🏠 Rooms</h3>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="add-room-btn" onclick="undo()" title="Undo last action (Ctrl+Z)" style="background: #FF9800;">↶ Undo</button>
+                            <button class="add-room-btn" onclick="showLidarImport()" title="Import LiDAR scan (.obj or .csv)" style="background: #2196F3;">📡 LiDAR</button>
+                            <button class="add-room-btn" onclick="enterEditMode()" title="Edit current room layout" style="background: #9C27B0;">📐 Edit Room</button>
+                            <button class="add-room-btn" onclick="checkRoomQuality()" title="Check if room has 90° corners" style="background: #4CAF50;">✓ Check Quality</button>
+                            <button class="add-room-btn" onclick="squareUpCorners()" title="Fix angled corners to 90°" style="background: #FF5722;">⊾ Square Up</button>
+                            <button class="add-room-btn" onclick="addNewRoom()">+ Add Room</button>
+                        </div>
+                    </div>
+                    <div class="room-list" id="roomList"></div>
+                </div>
+
+                <div class="panel-content">
+                    <h3 style="margin-bottom: 15px;">Current Room Setup</h3>
+                    
+                    <div class="form-group">
+                        <label>Number of Walls</label>
+                        <select id="wallCount" onchange="generateWallInputs()">
+                            <option value="3">3 Walls</option>
+                            <option value="4" selected>4 Walls</option>
+                            <option value="5">5 Walls</option>
+                            <option value="6">6 Walls</option>
+                            <option value="7">7 Walls</option>
+                            <option value="8">8 Walls</option>
+                            <option value="9">9 Walls</option>
+                            <option value="10">10 Walls</option>
+                            <option value="11">11 Walls</option>
+                            <option value="12">12 Walls</option>
+                        </select>
+                    </div>
+
+                    <div id="wallInputs"></div>
+
+                    <div class="form-group">
+                        <label>Ceiling Height (ft)</label>
+                        <input type="number" id="ceilingHeight" value="8.0" step="0.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Wall Thickness (inches)</label>
+                        <input type="number" id="wallThickness" value="4" min="4" max="24" step="1">
+                    </div>
+
+                    <button class="btn" id="applyMeasurementsBtn" style="width: 100%;">
+                        ✓ Apply Measurements
+                    </button>
+
+                    <h4 style="margin: 20px 0 10px 0;">Add Features</h4>
+                    <div class="feature-grid">
+                        <button class="feature-btn" id="doorBtn" onclick="selectFeature('door', event)">🚪 Door</button>
+                        <button class="feature-btn" id="windowBtn" onclick="selectFeature('window', event)">🪟 Window</button>
+                        <button class="feature-btn" id="openingBtn" onclick="selectFeature('opening', event)">🔓 Opening</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-area" id="canvasArea">
                 <canvas id="canvas2D"></canvas>
                 <div id="canvas3D"></div>
 
@@ -1538,46 +1645,16 @@
             </div>
         </div>
 
-        <!-- BOTTOM BAR: Room Tabs + Level Selector (like SketchUp) -->
-        <div style="
-            position: relative;
-            z-index: 1000;
-            background: #f0f0f0; 
-            border-top: 2px solid #999; 
-            padding: 10px 15px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
-            min-height: 60px;
-            max-height: 80px;
-            ">
-            
-            <!-- Left: Room Tabs -->
-            <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow-x: auto; overflow-y: hidden; max-width: calc(100% - 300px); padding: 5px 0;">
-                <button class="add-room-btn" onclick="addNewRoom()" style="padding: 8px 15px; font-size: 13px; min-width: auto; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; flex-shrink: 0;">+ Add Room</button>
-                <div id="roomList" style="display: flex; gap: 5px; align-items: center; flex-wrap: nowrap;"></div>
+        <div class="bottom-toolbar">
+            <div>
+                <button class="btn" onclick="saveProject()">💾 Save Project</button>
+                <button class="btn" onclick="loadProject()">📂 Load</button>
             </div>
-            
-            <!-- Right: Level Selector -->
-            <div style="display: flex; align-items: center; gap: 10px; background: white; padding: 8px 12px; border-radius: 5px; border: 2px solid #999; flex-shrink: 0;">
-                <span style="font-weight: 700; color: #333; font-size: 13px;">LEVEL:</span>
-                <select id="levelSelector" onchange="switchLevel(this.value)" style="
-                    padding: 6px 12px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    border: 2px solid #999;
-                    border-radius: 4px;
-                    background: white;
-                    cursor: pointer;
-                    min-width: 120px;
-                    color: #333;
-                ">
-                    <!-- Options will be generated here -->
-                </select>
-                <span id="levelRoomCount" style="font-weight: 600; color: #666; font-size: 12px; margin-left: 5px;">
-                    <!-- Room count will appear here -->
-                </span>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="font-weight: 600; color: #1e3c72; font-size: 15px;">
+                    📋 <span id="projectNameDisplay">Untitled Project</span>
+                </div>
+                <div id="coordinates" style="color: #666;">Ready</div>
             </div>
         </div>
     </div>
@@ -2121,16 +2198,8 @@
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">End Distance from Left (feet):</label>
             <input type="number" id="cutWallEnd" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box;" placeholder="e.g., 5.0" step="0.1" min="0">
             
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Height from Floor (feet):</label>
-            <input type="number" id="cutWallFloorDistance" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box;" placeholder="e.g., 0 for floor level" step="0.1" min="0" value="0">
-            
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Opening Height (feet):</label>
-            <input type="number" id="cutWallHeight" style="width: 100%; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 6px; margin-bottom: 15px; box-sizing: border-box;" placeholder="e.g., 8.0 for full height" step="0.1" min="0.1" value="8.0">
-            
             <div style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #856404; border: 1px solid #ffeaa7;">
-                💡 <strong>Example:</strong> To cut 3 feet starting at 2 feet, enter Start: 2.0, End: 5.0<br>
-                For a door: Floor Distance: 0, Height: 6.67 (80 inches)<br>
-                For a window: Floor Distance: 3.0, Height: 4.0
+                💡 <strong>Example:</strong> To cut 3 feet starting at 2 feet, enter Start: 2.0, End: 5.0
             </div>
             
             <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center;">
@@ -2614,32 +2683,6 @@
         <div class="dialog-field">
             <label>Width (inches)</label>
             <input type="number" id="featureWidth" value="36" min="1" max="240" step="1" onchange="updatePositionPreview()">
-        </div>
-
-        <div class="dialog-field" id="doorTypeField" style="display: none;">
-            <label>Door Type</label>
-            <select id="doorType">
-                <option value="single">Single</option>
-                <option value="double">Double</option>
-                <option value="sliding">Sliding Glass</option>
-                <option value="french">French</option>
-                <option value="bifold">Bi-fold</option>
-                <option value="pocket">Pocket</option>
-            </select>
-        </div>
-
-        <div class="dialog-field" id="windowTypeField" style="display: none;">
-            <label>Window Type</label>
-            <select id="windowType">
-                <option value="double-hung">Double Hung</option>
-                <option value="single-hung">Single Hung</option>
-                <option value="sliding">Sliding</option>
-                <option value="casement">Casement</option>
-                <option value="awning">Awning</option>
-                <option value="picture">Picture</option>
-                <option value="bay">Bay</option>
-                <option value="bow">Bow</option>
-            </select>
         </div>
 
         <div class="dialog-field" id="heightField" style="display: none;">
@@ -3501,8 +3544,7 @@
             potentialDragIndex: null,
             potentialDragWallIndex: null,
             projectName: 'Untitled Project',
-            orthoMode: true,  // ENABLED BY DEFAULT - Keep walls horizontal/vertical
-            snapMode: true,   // ENABLED BY DEFAULT - Snap walls when dragging
+            orthoMode: false,
             wallDrawingCorners: [],
             zoomWindowMode: false,
             zoomWindowStart: null,
@@ -3511,8 +3553,8 @@
             draggingHandle: null,  // NEW: Which handle is being dragged
             hoveredHandle: null,   // NEW: Which handle is being hovered
             wallDragPreview: null,  // NEW: Preview of wall position while dragging (Xactimate-style)
-            creatingAdjacentRoom: null,  // NEW: XACTIMATE - CTRL+Drag to create adjacent room
-            adjacentRoomPreview: null,   // NEW: XACTIMATE - Preview of adjacent room being created
+            creatingAdjacentRoom: null,  // XACTIMATE: CTRL+Drag to create adjacent room
+            adjacentRoomPreview: null,   // XACTIMATE: Preview of adjacent room being created
             currentLevel: 'Main Floor',  // NEW: Current level/floor being edited
             levels: ['Basement', 'Main Floor', '2nd Floor', '3rd Floor', 'Roof']  // NEW: Available levels
         };
@@ -3648,14 +3690,9 @@
             generateWallInputs();
             updateRoomList();
             updateModeIndicator();
-            
-            // FORCE 2D mode (3D is removed)
-            state.currentView = '2d';
-            document.getElementById('canvasArea').classList.remove('view-3d');
-            
             redraw2D(); // Initialize canvas rendering
             
-            console.log('✅ Canvas initialized and ready - 2D mode active');
+            console.log('✅ Canvas initialized and ready');
             
             // Add direct event listeners for zoom buttons
             document.getElementById('zoomInBtn').addEventListener('click', function() {
@@ -3669,24 +3706,16 @@
             });
             
             console.log('✅ Zoom buttons initialized');
-            
-            // Set ortho button as active by default (since orthoMode starts as true)
-            const orthoBtn = document.getElementById('orthoBtn');
-            if (orthoBtn) {
-                orthoBtn.classList.add('toolbar-btn-active');
-                console.log('✅ Ortho mode enabled by default');
-            }
-            
             console.log('Tool ready!');
             
-            // Initialize level selector (with retry to ensure DOM is ready)
+            // Initialize level buttons (with retry to ensure DOM is ready)
             function initLevelButtons() {
-                const selector = document.getElementById('levelSelector');
-                if (selector) {
+                const container = document.getElementById('levelButtons');
+                if (container) {
                     updateLevelButtons();
                     console.log('✅ Level selector initialized - 5 levels available');
                 } else {
-                    console.warn('Level selector not found, retrying...');
+                    console.warn('Level buttons container not found, retrying...');
                     setTimeout(initLevelButtons, 100);
                 }
             }
@@ -3722,31 +3751,10 @@
 
         // Mouse drag for panning 2D canvas
         let isPanning = false;
-        let spacebarPanning = false; // Spacebar enables pan mode
         let panStartX = 0;
         let panStartY = 0;
         let panStartPanX = 0;
         let panStartPanY = 0;
-        
-        // Listen for spacebar to enable pan mode
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !e.target.matches('input, textarea') && state.currentView === '2d') {
-                spacebarPanning = true;
-                const canvas = document.getElementById('canvas2D');
-                canvas.style.cursor = 'grab';
-                e.preventDefault();
-            }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'Space') {
-                spacebarPanning = false;
-                const canvas = document.getElementById('canvas2D');
-                if (!isPanning) {
-                    canvas.style.cursor = 'default';
-                }
-            }
-        });
         
         // Hover state for delete mode
         let hoverClickPoint = null;
@@ -3809,8 +3817,8 @@
                 }
             }
             
-            // ===== ROOM NAME CLICK DETECTION - Drag entire room =====
-            // Allow clicking room names to drag the entire room
+            // ===== ROOM NAME CLICK DETECTION - Activate handles like Xactimate =====
+            // Allow clicking room names even when already in edit mode (for room switching)
             if (e.button === 0) {
                 // Check all rooms to see if we clicked on a room name
                 for (let i = 0; i < state.rooms.length; i++) {
@@ -3825,26 +3833,33 @@
                         if (x >= centerX - halfWidth && x <= centerX + halfWidth &&
                             y >= centerY - halfHeight && y <= centerY + halfHeight) {
                             
-                            // Save state for undo
-                            saveStateForUndo();
-                            
-                            // Start dragging the entire room
-                            state.draggingRoom = {
-                                roomIndex: i,
-                                startX: x,
-                                startY: y,
-                                originalPoints: room.floorPoints.map(p => ({...p}))
-                            };
-                            
-                            // Switch to this room
+                            // Switch to this room and activate edit mode
                             state.currentRoomIndex = i;
+                            state.roomEditMode = true;
+                            
+                            // ONLY clear feature modes if we're NOT actively placing a feature
+                            if (!state.currentFeature) {
+                                state.wallSelectionMode = false;
+                            }
+                            
+                            state.draggingHandle = null; // Clear any active handle dragging
+                            state.hoveredHandle = null; // Clear handle hover
+                            
+                            // Clear toolbar buttons
+                            document.querySelectorAll('.toolbar-btn').forEach(btn => {
+                                btn.classList.remove('toolbar-btn-active');
+                            });
+                            
                             updateRoomList();
+                            canvas2D.style.cursor = 'default';
                             
-                            canvas2D.style.cursor = 'move';
+                            // Show room properties modal
+                            showRoomProperties(i);
                             
-                            console.log(`✅ Started dragging room: ${room.name}`);
+                            console.log(`✅ Clicked room name: ${room.name} - properties shown, handles activated`);
                             
                             redraw2D();
+                            updateStats();
                             return;
                         }
                     }
@@ -4170,8 +4185,8 @@
                 }
             }
             
-            // Middle mouse button, Shift+Left button, or Spacebar+Left button = pan
-            if (e.button === 1 || (e.button === 0 && e.shiftKey) || (e.button === 0 && spacebarPanning)) {
+            // Middle mouse button or Shift+Left button = pan
+            if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
                 e.preventDefault();
                 isPanning = true;
                 panStartX = e.clientX;
@@ -4196,33 +4211,6 @@
             state.mouseY = clickY;
             state.mouseWorldX = x;
             state.mouseWorldY = y;
-            
-            // ===== ROOM NAME HOVER DETECTION - Show move cursor =====
-            if (!state.draggingRoom && !state.draggingHandle && e.button !== 1) { // Not if already dragging or middle mouse
-                let hoveringRoomName = false;
-                // Check all rooms to see if hovering over a room name
-                for (let i = 0; i < state.rooms.length; i++) {
-                    const room = state.rooms[i];
-                    if (room.nameBounds && room.floorPoints && room.floorPoints.length > 0) {
-                        const centerX = room.nameBounds.x;
-                        const centerY = room.nameBounds.y;
-                        const halfWidth = room.nameBounds.width / 2;
-                        const halfHeight = room.nameBounds.height / 2;
-                        
-                        // Check if mouse is within room name bounds
-                        if (x >= centerX - halfWidth && x <= centerX + halfWidth &&
-                            y >= centerY - halfHeight && y <= centerY + halfHeight) {
-                            canvas2D.style.cursor = 'move';
-                            hoveringRoomName = true;
-                            break;
-                        }
-                    }
-                }
-                // Reset cursor if not hovering over room name
-                if (!hoveringRoomName && !state.hoveredHandle) {
-                    canvas2D.style.cursor = 'default';
-                }
-            }
             
             // ===== CREATING ADJACENT ROOM (XACTIMATE CTRL+DRAG) =====
             if (state.creatingAdjacentRoom) {
@@ -4263,143 +4251,6 @@
                 
                 redraw2D();
                 return;
-            }
-            
-            // ===== ROOM DRAGGING =====
-            if (state.draggingRoom) {
-                const room = state.rooms[state.draggingRoom.roomIndex];
-                if (room && room.floorPoints) {
-                    // Calculate offset from drag start
-                    let dx = x - state.draggingRoom.startX;
-                    let dy = y - state.draggingRoom.startY;
-                    
-                    // WALL SNAPPING: Check if any edge of the dragging room is close to another room's edge
-                    // Only snap if snapMode is enabled
-                    if (state.snapMode) {
-                        const snapTolerance = 30; // pixels (1 foot at 30px/ft)
-                        let snapped = false;
-                        let bestSnapOffsetX = 0;
-                        let bestSnapOffsetY = 0;
-                        let bestSnapDistance = Infinity;
-                        
-                        const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
-                        
-                        // Calculate temporary new positions
-                        const tempPoints = state.draggingRoom.originalPoints.map(p => ({
-                            x: p.x + dx,
-                            y: p.y + dy
-                        }));
-                        
-                        // Check each edge of the dragging room against each edge of other rooms
-                        for (const otherRoom of roomsOnLevel) {
-                            if (otherRoom === room) continue;
-                            if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
-                            
-                            // Check each edge of dragging room
-                            for (let i = 0; i < tempPoints.length; i++) {
-                            const p1 = tempPoints[i];
-                            const p2 = tempPoints[(i + 1) % tempPoints.length];
-                            
-                            const edgeLength1 = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-                            if (edgeLength1 < 10) continue; // Skip very short edges
-                            
-                            // Check against each edge of other room
-                            for (let j = 0; j < otherRoom.floorPoints.length; j++) {
-                                const op1 = otherRoom.floorPoints[j];
-                                const op2 = otherRoom.floorPoints[(j + 1) % otherRoom.floorPoints.length];
-                                
-                                const edgeLength2 = Math.sqrt(Math.pow(op2.x - op1.x, 2) + Math.pow(op2.y - op1.y, 2));
-                                if (edgeLength2 < 10) continue; // Skip very short edges
-                                
-                                // Check if edges are parallel and aligned
-                                const dx1 = p2.x - p1.x;
-                                const dy1 = p2.y - p1.y;
-                                const dx2 = op2.x - op1.x;
-                                const dy2 = op2.y - op1.y;
-                                
-                                // Normalize directions
-                                const dir1x = dx1 / edgeLength1;
-                                const dir1y = dy1 / edgeLength1;
-                                const dir2x = dx2 / edgeLength2;
-                                const dir2y = dy2 / edgeLength2;
-                                
-                                // Check if parallel (dot product close to ±1)
-                                const dot = dir1x * dir2x + dir1y * dir2y;
-                                
-                                if (Math.abs(dot) > 0.98) { // Nearly parallel (within 11 degrees)
-                                    // Calculate distances between all endpoint combinations
-                                    const p1ToOp1 = Math.sqrt(Math.pow(p1.x - op1.x, 2) + Math.pow(p1.y - op1.y, 2));
-                                    const p2ToOp2 = Math.sqrt(Math.pow(p2.x - op2.x, 2) + Math.pow(p2.y - op2.y, 2));
-                                    const p1ToOp2 = Math.sqrt(Math.pow(p1.x - op2.x, 2) + Math.pow(p1.y - op2.y, 2));
-                                    const p2ToOp1 = Math.sqrt(Math.pow(p2.x - op1.x, 2) + Math.pow(p2.y - op1.y, 2));
-                                    
-                                    // Check if edges can snap (both endpoints within tolerance)
-                                    let canSnap = false;
-                                    let snapDist = 0;
-                                    let offsetX = 0;
-                                    let offsetY = 0;
-                                    
-                                    // Forward alignment: p1->op1, p2->op2
-                                    if (p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) {
-                                        canSnap = true;
-                                        snapDist = (p1ToOp1 + p2ToOp2) / 2;
-                                        offsetX = op1.x - p1.x;
-                                        offsetY = op1.y - p1.y;
-                                    }
-                                    // Reverse alignment: p1->op2, p2->op1
-                                    else if (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance) {
-                                        canSnap = true;
-                                        snapDist = (p1ToOp2 + p2ToOp1) / 2;
-                                        offsetX = op2.x - p1.x;
-                                        offsetY = op2.y - p1.y;
-                                    }
-                                    
-                                    // Use the closest snap if multiple walls could snap
-                                    if (canSnap && snapDist < bestSnapDistance) {
-                                        bestSnapDistance = snapDist;
-                                        bestSnapOffsetX = offsetX;
-                                        bestSnapOffsetY = offsetY;
-                                        snapped = true;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Apply snap offset if snapped
-                        if (snapped) {
-                            dx += bestSnapOffsetX;
-                            dy += bestSnapOffsetY;
-                            canvas2D.style.cursor = 'crosshair'; // Visual feedback for snap
-                        } else {
-                            canvas2D.style.cursor = 'move';
-                        }
-                    }
-                    
-                    // If snap mode is off, just use regular cursor
-                    if (!state.snapMode) {
-                        canvas2D.style.cursor = 'move';
-                    }
-                    
-                    // Move all floor points with final offset (including snap if enabled)
-                    for (let i = 0; i < room.floorPoints.length; i++) {
-                        room.floorPoints[i].x = state.draggingRoom.originalPoints[i].x + dx;
-                        room.floorPoints[i].y = state.draggingRoom.originalPoints[i].y + dy;
-                    }
-                    
-                    // Move all walls (they reference the floor points, so they'll update automatically)
-                    // But we also need to update any absolute positions
-                    if (room.walls) {
-                        room.walls.forEach((wall, idx) => {
-                            const p1Index = idx;
-                            const p2Index = (idx + 1) % room.floorPoints.length;
-                            wall.start = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
-                            wall.end = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
-                        });
-                    }
-                    
-                    redraw2D();
-                    return;
-                }
             }
             
             // ===== ROOM EDIT MODE HANDLE DRAGGING =====
@@ -4459,57 +4310,54 @@
                         };
                         
                         // SNAP TO WALL: Check if preview wall is near another room's wall
-                        // Only snap if snapMode is enabled
-                        if (state.snapMode) {
-                            const snapTolerance = 30; // 30 pixels = 1 foot
-                            const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                        const snapTolerance = 30; // 30 pixels = 1 foot
+                        const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                        
+                        for (const otherRoom of roomsOnLevel) {
+                            if (otherRoom === room) continue;
+                            if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
                             
-                            for (const otherRoom of roomsOnLevel) {
-                                if (otherRoom === room) continue;
-                                if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
+                            // Check each edge of other room
+                            for (let i = 0; i < otherRoom.floorPoints.length; i++) {
+                                const op1 = otherRoom.floorPoints[i];
+                                const op2 = otherRoom.floorPoints[(i + 1) % otherRoom.floorPoints.length];
                                 
-                                // Check each edge of other room
-                                for (let i = 0; i < otherRoom.floorPoints.length; i++) {
-                                    const op1 = otherRoom.floorPoints[i];
-                                    const op2 = otherRoom.floorPoints[(i + 1) % otherRoom.floorPoints.length];
-                                    
-                                    // Calculate distance from preview wall endpoints to other wall endpoints
-                                    const p1ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op1.x, 2) + 
-                                                             Math.pow(state.wallDragPreview.p1.y - op1.y, 2));
-                                    const p2ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op2.x, 2) + 
-                                                             Math.pow(state.wallDragPreview.p2.y - op2.y, 2));
-                                    const p1ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op2.x, 2) + 
-                                                             Math.pow(state.wallDragPreview.p1.y - op2.y, 2));
-                                    const p2ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op1.x, 2) + 
-                                                             Math.pow(state.wallDragPreview.p2.y - op1.y, 2));
-                                    
-                                    // Check if preview wall is close to this wall (either direction)
-                                    if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) ||
-                                        (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
-                                        // SNAP! Align preview wall to match other room's wall exactly
-                                        if (p1ToOp1 < p1ToOp2) {
-                                            // Forward alignment
-                                            state.wallDragPreview.p1.x = op1.x;
-                                            state.wallDragPreview.p1.y = op1.y;
-                                            state.wallDragPreview.p2.x = op2.x;
-                                            state.wallDragPreview.p2.y = op2.y;
-                                        } else {
-                                            // Reverse alignment
-                                            state.wallDragPreview.p1.x = op2.x;
-                                            state.wallDragPreview.p1.y = op2.y;
-                                            state.wallDragPreview.p2.x = op1.x;
-                                            state.wallDragPreview.p2.y = op1.y;
-                                        }
-                                        state.wallDragPreview.snapped = true;
-                                        // Update distance after snap
-                                        const newDx = state.wallDragPreview.p1.x - state.draggingHandle.p1StartX;
-                                        const newDy = state.wallDragPreview.p1.y - state.draggingHandle.p1StartY;
-                                        state.wallDragPreview.distance = Math.sqrt(newDx * newDx + newDy * newDy) / 30;
-                                        break;
+                                // Calculate distance from preview wall endpoints to other wall endpoints
+                                const p1ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op1.x, 2) + 
+                                                         Math.pow(state.wallDragPreview.p1.y - op1.y, 2));
+                                const p2ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op2.x, 2) + 
+                                                         Math.pow(state.wallDragPreview.p2.y - op2.y, 2));
+                                const p1ToOp2 = Math.sqrt(Math.pow(state.wallDragPreview.p1.x - op2.x, 2) + 
+                                                         Math.pow(state.wallDragPreview.p1.y - op2.y, 2));
+                                const p2ToOp1 = Math.sqrt(Math.pow(state.wallDragPreview.p2.x - op1.x, 2) + 
+                                                         Math.pow(state.wallDragPreview.p2.y - op1.y, 2));
+                                
+                                // Check if preview wall is close to this wall (either direction)
+                                if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) ||
+                                    (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
+                                    // SNAP! Align preview wall to match other room's wall exactly
+                                    if (p1ToOp1 < p1ToOp2) {
+                                        // Forward alignment
+                                        state.wallDragPreview.p1.x = op1.x;
+                                        state.wallDragPreview.p1.y = op1.y;
+                                        state.wallDragPreview.p2.x = op2.x;
+                                        state.wallDragPreview.p2.y = op2.y;
+                                    } else {
+                                        // Reverse alignment
+                                        state.wallDragPreview.p1.x = op2.x;
+                                        state.wallDragPreview.p1.y = op2.y;
+                                        state.wallDragPreview.p2.x = op1.x;
+                                        state.wallDragPreview.p2.y = op1.y;
                                     }
+                                    state.wallDragPreview.snapped = true;
+                                    // Update distance after snap
+                                    const newDx = state.wallDragPreview.p1.x - state.draggingHandle.p1StartX;
+                                    const newDy = state.wallDragPreview.p1.y - state.draggingHandle.p1StartY;
+                                    state.wallDragPreview.distance = Math.sqrt(newDx * newDx + newDy * newDy) / 30;
+                                    break;
                                 }
                             }
-                        } // End of snapMode check
+                        }
                         
                         redraw2D();
                         updateStats();
@@ -4520,8 +4368,8 @@
             
             // ===== ROOM EDIT MODE HANDLE HOVER DETECTION =====
             if (state.roomEditMode && !state.showAllRooms) {
-                const editRoom = getCurrentRoom();
-                if (editRoom && editRoom.floorPoints) {
+                const room = getCurrentRoom();
+                if (room && room.floorPoints) {
                     const HOVER_SIZE = 15 / state.zoom;
                     let foundHandle = null;
                     
@@ -4529,9 +4377,9 @@
                     // (Skip corner detection to prevent accidental selection)
                     
                     // Check edge handles
-                    for (let i = 0; i < editRoom.floorPoints.length; i++) {
-                        const p1 = editRoom.floorPoints[i];
-                        const p2 = editRoom.floorPoints[(i + 1) % editRoom.floorPoints.length];
+                    for (let i = 0; i < room.floorPoints.length; i++) {
+                        const p1 = room.floorPoints[i];
+                        const p2 = room.floorPoints[(i + 1) % room.floorPoints.length];
                         const midX = (p1.x + p2.x) / 2;
                         const midY = (p1.y + p2.y) / 2;
                         const dist = Math.sqrt(Math.pow(x - midX, 2) + Math.pow(y - midY, 2));
@@ -4872,8 +4720,8 @@
             }
             
             // Existing hover detection code continues below...
-            const currentRoom = getCurrentRoom();
-            if (!currentRoom) return;
+            const room = getCurrentRoom();
+            if (!room) return;
             
             // Always reset hover states first
             const prevHoverDoor = hoverDoorIndex;
@@ -4885,8 +4733,8 @@
             // Check if hovering over door or window when not in wall selection mode and no feature selected
             if (!state.wallSelectionMode && !state.currentFeature) {
                 // Check doors - always check regardless of other conditions
-                for (let i = 0; i < currentRoom.doors.length; i++) {
-                    const door = currentRoom.doors[i];
+                for (let i = 0; i < room.doors.length; i++) {
+                    const door = room.doors[i];
                     const dist = Math.sqrt(Math.pow(x - door.x, 2) + Math.pow(y - door.y, 2));
                     if (dist < 50) { // Increased to 50 pixels for easier detection
                         hoverDoorIndex = i;
@@ -4897,8 +4745,8 @@
                 }
                 
                 // Check windows
-                for (let i = 0; i < currentRoom.windows.length; i++) {
-                    const win = currentRoom.windows[i];
+                for (let i = 0; i < room.windows.length; i++) {
+                    const win = room.windows[i];
                     const dist = Math.sqrt(Math.pow(x - win.x, 2) + Math.pow(y - win.y, 2));
                     if (dist < 50) { // Increased to 50 pixels
                         hoverWindowIndex = i;
@@ -4909,7 +4757,7 @@
                 }
                 
                 // Check wall cuts/openings
-                const hitCut = findClickedCut(currentRoom, x, y);
+                const hitCut = findClickedCut(room, x, y);
                 if (hitCut) {
                     canvas2D.style.cursor = 'grab';
                     console.log('🔓 Hovering over opening - ready to drag');
@@ -4917,7 +4765,7 @@
                 }
                 
                 // Check missing walls
-                const hitMissing = findMissingAtPoint(currentRoom, x, y);
+                const hitMissing = findMissingAtPoint(room, x, y);
                 if (hitMissing) {
                     canvas2D.style.cursor = 'grab';
                     return;
@@ -4940,10 +4788,10 @@
                 let minDist = Infinity;
                 let closestPoint = null;
                 
-                const numPoints = currentRoom.floorPoints.length;
+                const numPoints = room.floorPoints.length;
                 for (let i = 0; i < numPoints; i++) {
-                    const p1 = currentRoom.floorPoints[i];
-                    const p2 = currentRoom.floorPoints[(i + 1) % numPoints];
+                    const p1 = room.floorPoints[i];
+                    const p2 = room.floorPoints[(i + 1) % numPoints];
                     
                     const dist = distanceToLineSegment(x, y, p1.x, p1.y, p2.x, p2.y);
                     if (dist < 60 && dist < minDist) {  // Increased tolerance for easier hovering
@@ -4982,7 +4830,6 @@
                     redraw2D(); // Redraw to show the point indicator
                 }
             }
-        } // Close an unclosed block
         });
 
         function resizeCanvas() {
@@ -5004,8 +4851,7 @@
         }
 
         function init3D() {
-            console.log('=== Initializing 3D Scene ===');
-            
+            console.log('=== Initializing 3D ===');
             const container = document.getElementById('canvas3D');
             const area = document.getElementById('canvasArea');
             
@@ -5505,29 +5351,48 @@
         }
 
         function updateLevelButtons() {
-            const selector = document.getElementById('levelSelector');
-            if (!selector) {
-                console.error('❌ Level selector not found!');
+            const container = document.getElementById('levelButtons');
+            if (!container) {
+                console.error('❌ Level buttons container not found!');
                 return;
             }
             
-            console.log(`Populating level dropdown with ${state.levels.length} levels:`, state.levels);
-            selector.innerHTML = '';
+            console.log(`Creating ${state.levels.length} level buttons:`, state.levels);
+            container.innerHTML = '';
             
             state.levels.forEach(level => {
                 // Count rooms on this level
                 const roomsOnLevel = state.rooms.filter(r => r.level === level).length;
                 
-                const option = document.createElement('option');
-                option.value = level;
-                option.textContent = `${level} (${roomsOnLevel})`;
+                const btn = document.createElement('button');
+                btn.textContent = `${level} (${roomsOnLevel})`;
+                btn.className = 'view-btn';
+                btn.style.cssText = 'padding: 10px 18px; font-size: 14px; font-weight: 600; border: 2px solid white; transition: all 0.2s;';
                 
                 if (level === state.currentLevel) {
-                    option.selected = true;
+                    btn.style.background = 'white';
+                    btn.style.color = '#667eea';
+                    btn.style.transform = 'scale(1.05)';
+                    btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+                } else {
+                    btn.style.background = 'rgba(255,255,255,0.2)';
+                    btn.style.color = 'white';
                 }
                 
-                selector.appendChild(option);
-                console.log(`  ✓ Added option: ${level} (${roomsOnLevel} rooms)`);
+                btn.onclick = () => switchLevel(level);
+                btn.onmouseover = () => {
+                    if (level !== state.currentLevel) {
+                        btn.style.background = 'rgba(255,255,255,0.3)';
+                    }
+                };
+                btn.onmouseout = () => {
+                    if (level !== state.currentLevel) {
+                        btn.style.background = 'rgba(255,255,255,0.2)';
+                    }
+                };
+                
+                container.appendChild(btn);
+                console.log(`  ✓ Created button: ${level} (${roomsOnLevel} rooms)`);
             });
             
             // Update room count display
@@ -5539,7 +5404,7 @@
                                           `${roomsOnCurrentLevel} rooms`;
             }
             
-            console.log(`✅ Level dropdown updated - ${selector.options.length} options available`);
+            console.log(`✅ Level buttons updated - ${container.children.length} buttons visible`);
         }
 
         function updateRoomPosition() {
@@ -5579,26 +5444,15 @@
         }
 
         function deleteRoom(index) {
-            const roomName = state.rooms[index].name;
-            if (confirm(`Delete "${roomName}"?`)) {
-                saveStateForUndo();
+            if (state.rooms.length === 1) {
+                showToast('❌ Cannot delete last room');
+                return;
+            }
+            if (confirm(`Delete "${state.rooms[index].name}"?`)) {
                 state.rooms.splice(index, 1);
-                
-                // If we deleted all rooms, reset to empty state
-                if (state.rooms.length === 0) {
-                    state.currentRoomIndex = -1;
-                    showToast('✓ All rooms deleted');
-                } else {
-                    state.currentRoomIndex = Math.min(state.currentRoomIndex, state.rooms.length - 1);
-                    showToast(`✓ "${roomName}" deleted`);
-                }
-                
+                state.currentRoomIndex = Math.min(state.currentRoomIndex, state.rooms.length - 1);
                 updateRoomList();
                 redraw2D();
-                // Update 3D view if in 3D mode
-                if (state.currentView === '3d') {
-                    render3D();
-                }
             }
         }
 
@@ -6422,67 +6276,6 @@
             canvas.classList.remove('edit-mode');
             
             // Redraw without edit mode visuals
-            redraw2D();
-        }
-        
-        function toggleRoomShapeEdit() {
-            const room = getCurrentRoom();
-            if (!room) {
-                showToast('❌ Please select a room first', 3000);
-                return;
-            }
-            
-            // Toggle room edit mode
-            state.roomEditMode = !state.roomEditMode;
-            
-            // Toggle button active state
-            const btn = document.getElementById('editShapeBtn');
-            
-            if (state.roomEditMode) {
-                console.log('🔧 Room shape editing ENABLED');
-                showToast('🔧 SHAPE EDIT MODE - Drag edge handles to resize. Hold CTRL+drag to create adjacent room!', 5000);
-                
-                if (btn) btn.classList.add('toolbar-btn-active');
-                
-                // Make sure we're not in all-rooms view
-                if (state.showAllRooms) {
-                    state.showAllRooms = false;
-                }
-                
-                // Clear any wall drawing mode
-                state.wallSelectionMode = false;
-                state.currentFeature = null;
-                state.wallDrawingCorners = [];
-                state.wallDrawingFirstCorner = null;
-                
-                // Clear other toolbar buttons (but DON'T interfere with their onclick - just visual)
-                document.querySelectorAll('.toolbar-btn').forEach(b => {
-                    if (b.id !== 'editShapeBtn' && b.id !== 'orthoBtn') {
-                        b.classList.remove('toolbar-btn-active');
-                    }
-                });
-                
-                // Update canvas cursor
-                const canvas = document.getElementById('canvas2D');
-                if (canvas) canvas.style.cursor = 'default';
-                
-                // Hide any instruction banner
-                const banner = document.getElementById('instructionBanner');
-                if (banner) banner.style.display = 'none';
-                
-            } else {
-                console.log('🔧 Room shape editing DISABLED');
-                showToast('✅ Shape edit mode disabled', 2000);
-                
-                if (btn) btn.classList.remove('toolbar-btn-active');
-                
-                // Clear any active dragging
-                state.draggingHandle = null;
-                state.hoveredHandle = null;
-                state.wallDragPreview = null;
-            }
-            
-            // Redraw to show/hide handles
             redraw2D();
         }
         
@@ -7769,11 +7562,9 @@ function showPositionModal(featureType, featureIndex) {
             } else if (featureType === 'door') {
                 heightFields.style.display = 'block';
                 const heightInput = document.getElementById('positionHeightInput');
-                const floorHeightInput = document.getElementById('positionFloorHeightInput');
                 heightInput.value = feature.height || 80; // Default 80" (6'8") if not set
-                floorHeightInput.value = (feature.heightFromFloor !== undefined && feature.heightFromFloor !== null) ? feature.heightFromFloor : 0; // Doors start at floor
                 document.querySelector('#positionHeightFields label[for="positionHeightInput"]').textContent = 'Door Height (inches)';
-                document.getElementById('positionFloorHeightFields').style.display = 'block'; // Show floor height for doors too
+                document.getElementById('positionFloorHeightFields').style.display = 'none';
                 
                 // Show door swing selector and door type
                 const swingFields = document.getElementById('positionDoorSwingFields');
@@ -7954,16 +7745,12 @@ function showPositionModal(featureType, featureIndex) {
             feature.width = newWidth;
             feature.referenceCorner = referenceCorner;
             
-            // For doors, update height, floor height, swing, and door type
+            // For doors, update height, swing, and door type
             if (positionFeatureType === 'door') {
                 const newHeight = parseFloat(document.getElementById('positionHeightInput').value);
-                const newFloorHeight = parseFloat(document.getElementById('positionFloorHeightInput').value);
                 
                 if (!isNaN(newHeight) && newHeight >= 12 && newHeight <= 120) {
                     feature.height = newHeight;
-                }
-                if (!isNaN(newFloorHeight) && newFloorHeight >= 0 && newFloorHeight <= 10) {
-                    feature.heightFromFloor = newFloorHeight;
                 }
                 
                 // Save door type
@@ -8269,67 +8056,66 @@ function showPositionModal(featureType, featureIndex) {
         });
 
         function updateRoomList() {
-            console.log('🔄 updateRoomList called, total rooms:', state.rooms.length);
             const list = document.getElementById('roomList');
             
             if (!list) {
-                console.error('❌ ERROR: Room list element not found!');
+                console.error('ERROR: Room list element not found!');
                 return;
             }
-            
-            console.log('✅ Found roomList element:', list);
             
             list.innerHTML = '';
             
-            if (state.rooms.length === 0) {
-                console.log('⚠️ No rooms to display');
-                return;
-            }
+            if (state.rooms.length === 0) return;
             
             // Filter to show only rooms on current level
             const roomsOnCurrentLevel = state.rooms.filter(r => r.level === state.currentLevel);
             
-            console.log(`📍 Current level: ${state.currentLevel}, Rooms on this level: ${roomsOnCurrentLevel.length}`);
-            
             if (roomsOnCurrentLevel.length === 0) {
-                list.innerHTML = '<div style="padding: 10px; color: #999; font-size: 12px;">No rooms on this level</div>';
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No rooms on this level yet.<br><br>Click "+ Add Room" to create one.</div>';
                 return;
             }
             
             roomsOnCurrentLevel.forEach((room) => {
                 const i = state.rooms.indexOf(room);  // Get index in full rooms array
                 
-                console.log(`  Creating tab for room ${i}: ${room.name}`);
-                
                 const div = document.createElement('div');
                 div.className = 'room-item' + (i === state.currentRoomIndex ? ' active' : '');
-                
-                // Make tabs VERY visible with inline styles
-                div.style.cssText = `
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    padding: 8px 12px;
-                    background: ${i === state.currentRoomIndex ? '#4CAF50' : 'white'};
-                    color: ${i === state.currentRoomIndex ? 'white' : '#333'};
-                    border: 2px solid ${i === state.currentRoomIndex ? '#4CAF50' : '#999'};
-                    border-radius: 4px 4px 0 0;
-                    cursor: pointer;
-                    font-size: 13px;
-                    font-weight: ${i === state.currentRoomIndex ? '700' : '500'};
-                    white-space: nowrap;
-                    min-width: 120px;
-                `;
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '5px';
                 
                 // Create room name text (not clickable, just display)
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = room.name;
-                nameSpan.style.cssText = 'flex: 1;';
+                nameSpan.style.cssText = 'flex: 1; padding: 8px;';
+                
+                // Create EDIT NAME button - very obvious
+                const editNameBtn = document.createElement('button');
+                editNameBtn.textContent = '✏️';
+                editNameBtn.style.cssText = 'padding: 6px 10px; font-size: 14px; background: #FFA500; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;';
+                editNameBtn.title = 'Edit room name';
+                editNameBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    console.log('===== EDIT NAME BUTTON CLICKED =====');
+                    console.log('Room index:', i);
+                    console.log('Current name:', room.name);
+                    showEditNameModal(i);
+                });
+                
+                // Create edit measurements button
+                const editMeasureBtn = document.createElement('button');
+                editMeasureBtn.textContent = '📏';
+                editMeasureBtn.style.cssText = 'padding: 6px 10px; font-size: 14px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;';
+                editMeasureBtn.title = 'Edit measurements';
+                editMeasureBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    editRoomMeasurements(i);
+                });
                 
                 // Create delete button
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = '×';
-                deleteBtn.style.cssText = 'padding: 2px 6px; font-size: 16px; background: rgba(244,67,54,0.2); color: #f44336; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;';
+                deleteBtn.style.cssText = 'padding: 6px 10px; font-size: 18px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;';
                 deleteBtn.title = 'Delete room';
                 deleteBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -8337,6 +8123,8 @@ function showPositionModal(featureType, featureIndex) {
                 });
                 
                 div.appendChild(nameSpan);
+                div.appendChild(editNameBtn);
+                div.appendChild(editMeasureBtn);
                 div.appendChild(deleteBtn);
                 
                 // Click on the row to switch rooms
@@ -8346,10 +8134,7 @@ function showPositionModal(featureType, featureIndex) {
                 });
                 
                 list.appendChild(div);
-                console.log('  ✅ Tab added to list');
             });
-            
-            console.log('✅ updateRoomList complete, list children:', list.children.length);
         }
 
         function editRoomName(index) {
@@ -8464,8 +8249,6 @@ function showPositionModal(featureType, featureIndex) {
             const cut = wall.cuts[cutIdx];
             document.getElementById('cutWallStart').value = cut.startDist;
             document.getElementById('cutWallEnd').value = cut.endDist;
-            document.getElementById('cutWallFloorDistance').value = cut.floorDistance || 0;
-            document.getElementById('cutWallHeight').value = cut.height || 8.0;
 
             // Show modal + buttons
             document.getElementById('cutWallDeleteBtn').style.display = 'inline-block';
@@ -8760,8 +8543,6 @@ function confirmCutWall() {
             const wallIdx = parseInt(document.getElementById('cutWallSelect').value);
             const startDist = parseFloat(document.getElementById('cutWallStart').value);
             const endDist = parseFloat(document.getElementById('cutWallEnd').value);
-            const floorDistance = parseFloat(document.getElementById('cutWallFloorDistance').value) || 0;
-            const height = parseFloat(document.getElementById('cutWallHeight').value) || 8.0;
             
             console.log('Wall Index:', wallIdx);
             console.log('Start Distance:', startDist);
@@ -8812,15 +8593,11 @@ function confirmCutWall() {
                         if (!wall.cuts) wall.cuts = [];
                         moved.startDist = startDist;
                         moved.endDist = endDist;
-                        moved.floorDistance = floorDistance;
-                        moved.height = height;
                         wall.cuts.push(moved);
                     } else {
                         // Update in place
                         oldWall.cuts[cutIdx].startDist = startDist;
                         oldWall.cuts[cutIdx].endDist = endDist;
-                        oldWall.cuts[cutIdx].floorDistance = floorDistance;
-                        oldWall.cuts[cutIdx].height = height;
                     }
                 }
             } else {
@@ -8829,8 +8606,6 @@ function confirmCutWall() {
                 wall.cuts.push({
                     startDist: startDist,
                     endDist: endDist,
-                    floorDistance: floorDistance,
-                    height: height,
                     name: `Cut ${wall.cuts.length + 1}`
                 });
             }
@@ -9010,69 +8785,6 @@ function confirmCutWall() {
                     missingWalls: preservedMissingWalls
                 });
             }
-            
-            // CRITICAL: Update door and window positions after walls change
-            updateFeaturePositions(room);
-        }
-        
-        function updateFeaturePositions(room) {
-            // Update doors
-            if (room.doors && room.doors.length > 0) {
-                room.doors.forEach(door => {
-                    if (door.wallIndex >= 0 && door.wallIndex < room.walls.length) {
-                        const wall = room.walls[door.wallIndex];
-                        
-                        // Door stores width in INCHES and distanceFromLeft in FEET (left edge)
-                        const widthFeet = door.width / 12; // Convert inches to feet
-                        const edgePosition = door.distanceFromLeft; // Already in feet
-                        const centerPosition = edgePosition + (widthFeet / 2); // Center position
-                        
-                        // Calculate position along wall
-                        const wallDx = wall.end.x - wall.start.x;
-                        const wallDy = wall.end.y - wall.start.y;
-                        const wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
-                        const wallLengthFeet = wallLength / 30;
-                        
-                        if (wallLengthFeet > 0) {
-                            const param = centerPosition / wallLengthFeet;
-                            door.x = wall.start.x + wallDx * param;
-                            door.y = wall.start.y + wallDy * param;
-                            
-                            // Update rotation to match wall angle
-                            door.rotation = Math.atan2(wallDy, wallDx) * 180 / Math.PI;
-                        }
-                    }
-                });
-            }
-            
-            // Update windows
-            if (room.windows && room.windows.length > 0) {
-                room.windows.forEach(window => {
-                    if (window.wallIndex >= 0 && window.wallIndex < room.walls.length) {
-                        const wall = room.walls[window.wallIndex];
-                        
-                        // Window stores width in INCHES and distanceFromLeft in FEET (left edge)
-                        const widthFeet = window.width / 12; // Convert inches to feet
-                        const edgePosition = window.distanceFromLeft; // Already in feet
-                        const centerPosition = edgePosition + (widthFeet / 2); // Center position
-                        
-                        // Calculate position along wall
-                        const wallDx = wall.end.x - wall.start.x;
-                        const wallDy = wall.end.y - wall.start.y;
-                        const wallLength = Math.sqrt(wallDx * wallDx + wallDy * wallDy);
-                        const wallLengthFeet = wallLength / 30;
-                        
-                        if (wallLengthFeet > 0) {
-                            const param = centerPosition / wallLengthFeet;
-                            window.x = wall.start.x + wallDx * param;
-                            window.y = wall.start.y + wallDy * param;
-                            
-                            // Update rotation to match wall angle
-                            window.rotation = Math.atan2(wallDy, wallDx) * 180 / Math.PI;
-                        }
-                    }
-                });
-            }
         }
 
         function createRoomInGap(originalRoom, dragHandle, preview) {
@@ -9148,133 +8860,31 @@ function confirmCutWall() {
         }
 
         function switch2D() {
-            console.log('=== Switching to 2D view ===');
-            
             state.currentView = '2d';
-            
-            const canvasArea = document.getElementById('canvasArea');
-            const canvas3D = document.getElementById('canvas3D');
-            const canvas2D = document.getElementById('canvas2D');
-            
-            // Remove 3D class
-            canvasArea.classList.remove('view-3d');
-            
-            // Force canvas visibility
-            canvas2D.style.display = 'block';
-            canvas3D.style.display = 'none';
-            
-            console.log('Switched to 2D - canvas2D display:', canvas2D.style.display);
-            console.log('Switched to 2D - canvas3D display:', canvas3D.style.display);
-            
+            document.getElementById('canvasArea').classList.remove('view-3d');
             document.querySelectorAll('.view-btn')[0].classList.add('active');
             document.querySelectorAll('.view-btn')[1].classList.remove('active');
             
             // Hide Reset Camera button in 2D view
             const resetBtn = document.getElementById('resetCameraBtn');
             if (resetBtn) resetBtn.style.display = 'none';
-            
-            // Redraw 2D view
-            redraw2D();
-            console.log('2D view redrawn');
         }
 
         function switch3D() {
             console.log('=== Switching to 3D view ===');
             console.log('Current rooms:', state.rooms.length);
             
-            showToast('Switching to 3D view...', 2000);
-            
             state.currentView = '3d';
-            
-            const canvasArea = document.getElementById('canvasArea');
-            const canvas3D = document.getElementById('canvas3D');
-            const canvas2D = document.getElementById('canvas2D');
-            
-            console.log('canvasArea element:', canvasArea);
-            console.log('canvas3D element:', canvas3D);
-            console.log('canvas2D element:', canvas2D);
-            
-            // Force the class change
-            canvasArea.classList.add('view-3d');
-            console.log('Added view-3d class');
-            console.log('canvasArea classes:', canvasArea.className);
-            
-            // Force canvas visibility
-            canvas2D.style.display = 'none';
-            canvas3D.style.display = 'block';
-            console.log('Forced canvas display styles');
-            console.log('canvas2D display:', canvas2D.style.display);
-            console.log('canvas3D display:', canvas3D.style.display);
-            
+            document.getElementById('canvasArea').classList.add('view-3d');
             document.querySelectorAll('.view-btn')[0].classList.remove('active');
             document.querySelectorAll('.view-btn')[1].classList.add('active');
-            
-            console.log('Canvas area classes:', document.getElementById('canvasArea').className);
-            console.log('Canvas3D display:', document.getElementById('canvas3D').style.display);
             
             // Show Reset Camera button in 3D view
             const resetBtn = document.getElementById('resetCameraBtn');
             if (resetBtn) resetBtn.style.display = 'inline-block';
             
-            // NUCLEAR OPTION: Completely destroy and rebuild the scene
-            if (scene) {
-                console.log('💣 NUCLEAR CLEAR: Disposing entire scene');
-                console.log('   Children before:', scene.children.length);
-                
-                // Dispose of all meshes properly
-                while (scene.children.length > 0) {
-                    const child = scene.children[0];
-                    if (child.geometry) child.geometry.dispose();
-                    if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach(mat => mat.dispose());
-                        } else {
-                            child.material.dispose();
-                        }
-                    }
-                    scene.remove(child);
-                }
-                console.log('   Children after disposal:', scene.children.length);
-                
-                // Re-add lights
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-                scene.add(ambientLight);
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-                dirLight.position.set(30, 50, 30);
-                dirLight.castShadow = true;
-                scene.add(dirLight);
-                
-                console.log('   Lights re-added, children now:', scene.children.length);
-            }
-            
             // CALCULATE CENTER IMMEDIATELY before rendering
             const totalRooms = state.rooms.filter(r => r.floorPoints && r.floorPoints.length >= 3).length;
-            
-            console.log(`Total rooms with geometry: ${totalRooms}`);
-            
-            // If no rooms, explicitly clear the scene before rendering
-            if (totalRooms === 0) {
-                console.log('⚠️ No rooms - clearing 3D scene and will show empty view');
-                if (scene) {
-                    // Clear all objects except lights/camera
-                    for (let i = scene.children.length - 1; i >= 3; i--) {
-                        scene.remove(scene.children[i]);
-                    }
-                    console.log('✅ Scene pre-cleared, children count:', scene.children.length);
-                }
-                // Don't return early - let render3D() handle the empty scene
-            }
-            
-            if (totalRooms === 1) {
-                console.log('⚠️ No rooms - will render empty scene');
-                if (scene) {
-                    // Clear all objects except lights/camera
-                    for (let i = scene.children.length - 1; i >= 3; i--) {
-                        scene.remove(scene.children[i]);
-                    }
-                    console.log('✅ Scene pre-cleared, children count:', scene.children.length);
-                }
-            }
             
             if (totalRooms === 1) {
                 const room = state.rooms.find(r => r.floorPoints && r.floorPoints.length >= 3);
@@ -9428,9 +9038,9 @@ function confirmCutWall() {
         }
 
         function generateWallInputs() {
-            // DISABLED - UI elements removed
-            // Wall inputs are no longer in the interface
-            return;
+            const count = parseInt(document.getElementById('wallCount').value);
+            const container = document.getElementById('wallInputs');
+            container.innerHTML = '';
             
             // Clear previous direction selections
             window.wallDirections = {};
@@ -10012,23 +9622,6 @@ function confirmCutWall() {
                 return;
             }
             
-            // ===== ROOM DRAG END =====
-            if (state.draggingRoom) {
-                console.log(`✅ Finished dragging room`);
-                state.draggingRoom = null;
-                canvas2D.style.cursor = 'default';
-                
-                // Recalculate walls from the new positions
-                const room = getCurrentRoom();
-                if (room) {
-                    updateRoomWallsFromPoints(room);
-                }
-                
-                redraw2D();
-                updateStats();
-                return;
-            }
-            
             // ===== ROOM EDIT MODE HANDLE DRAG END =====
             if (state.draggingHandle) {
                 // XACTIMATE-STYLE: If dragging edge handle with preview, check for CTRL key
@@ -10054,22 +9647,26 @@ function confirmCutWall() {
                             // Check if this edge is shared with another room BEFORE moving
                             const sharedEdgeBefore = findRoomSharingEdge(room, edgeIndex);
                             
-                            // CRITICAL: Save which points we're about to move
-                            const movingP1 = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
-                            const movingP2 = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
-                            
-                            // Move ONLY these 2 points - DO NOT TOUCH OTHER POINTS!
+                            // Move this room's wall
                             room.floorPoints[p1Index].x = state.wallDragPreview.p1.x;
                             room.floorPoints[p1Index].y = state.wallDragPreview.p1.y;
                             room.floorPoints[p2Index].x = state.wallDragPreview.p2.x;
                             room.floorPoints[p2Index].y = state.wallDragPreview.p2.y;
                             
-                            // CRITICAL CHANGE: Do NOT update adjacent room!
-                            // When stretching a shared wall, the adjacent room stays anchored
-                            // This prevents the dragged room from moving - it just stretches
-                            // The shared wall will become unshared after stretching
-                            
-                            console.log('✅ Wall stretched - shared wall is now independent');
+                            // If this edge WAS shared, update the adjacent room's matching edge
+                            if (sharedEdgeBefore) {
+                                const adjRoom = sharedEdgeBefore.room;
+                                const adjP1Index = sharedEdgeBefore.edgeIndex;
+                                const adjP2Index = (adjP1Index + 1) % adjRoom.floorPoints.length;
+                                
+                                // Update adjacent room's matching points to keep wall aligned
+                                adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p1.x;
+                                adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p1.y;
+                                adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p2.x;
+                                adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p2.y;
+                                
+                                updateRoomWallsFromPoints(adjRoom);
+                            }
                             
                             // CRITICAL: Check if the NEW position creates a shared wall with ANY room
                             // This handles the case where expanding creates a NEW shared wall
@@ -10931,16 +10528,6 @@ function confirmCutWall() {
             console.log('Room has', room.doors.length, 'doors and', room.windows.length, 'windows');
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             
-            // CHECK FOR DIMENSION LABEL CLICK FIRST (highest priority when not in tool modes)
-            if (!state.wallSelectionMode && !state.currentFeature) {
-                const dimClick = checkDimensionLabelClick(room, x, y);
-                if (dimClick) {
-                    console.log('✓ Clicked on dimension label for wall', dimClick.wallIndex);
-                    editWallLength(room, dimClick.wallIndex);
-                    return;
-                }
-            }
-            
             // MODE 1: Reposition OR Delete doors/windows - when NOT in any placement mode
             if (!state.wallSelectionMode && !state.currentFeature) {
                 console.log('✓ IN REPOSITION/DELETE MODE');
@@ -11063,7 +10650,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     const newRoomNumber = state.rooms.length + 1;
                     state.rooms.push({
                         name: `Room ${newRoomNumber}`,
-                        level: state.currentLevel,  // CRITICAL: Assign to current level!
                         floorPoints: [],
                         walls: [],
                         ceilingHeight: 8.0,
@@ -11543,12 +11129,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 document.getElementById('heightFieldLabel').textContent = 'Height (inches)';
                 document.getElementById('heightHelpText').textContent = 'Standard door: 80" (6\'8")';
                 
-                // Show door type selector
-                const doorTypeField = document.getElementById('doorTypeField');
-                if (doorTypeField) doorTypeField.style.display = 'block';
-                const windowTypeField = document.getElementById('windowTypeField');
-                if (windowTypeField) windowTypeField.style.display = 'none';
-                
                 // Reset width field label to inches for doors
                 const widthLabel = document.querySelector('label[for="featureWidth"]') || 
                                    document.querySelector('.dialog-field label');
@@ -11578,12 +11158,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 document.getElementById('heightFieldLabel').textContent = 'Height from Floor (feet)';
                 document.getElementById('heightHelpText').textContent = 'Enter 0 for floor-level windows';
                 
-                // Show window type selector
-                const windowTypeField = document.getElementById('windowTypeField');
-                if (windowTypeField) windowTypeField.style.display = 'block';
-                const doorTypeField = document.getElementById('doorTypeField');
-                if (doorTypeField) doorTypeField.style.display = 'none';
-                
                 // Reset width field label to inches for windows
                 const widthLabel = document.querySelector('label[for="featureWidth"]') || 
                                    document.querySelector('.dialog-field label');
@@ -11611,12 +11185,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 heightField.style.display = 'block';
                 document.getElementById('heightFieldLabel').textContent = 'Height (feet)';
                 document.getElementById('heightHelpText').textContent = 'Full height opening (floor to ceiling)';
-                
-                // Hide type selectors for openings
-                const doorTypeField = document.getElementById('doorTypeField');
-                if (doorTypeField) doorTypeField.style.display = 'none';
-                const windowTypeField = document.getElementById('windowTypeField');
-                if (windowTypeField) windowTypeField.style.display = 'none';
                 
                 // Change width field label for openings
                 const widthLabel = document.querySelector('label[for="featureWidth"]') || 
@@ -11708,7 +11276,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             
             if (state.currentFeature === 'door') {
                 const width = parseFloat(document.getElementById('featureWidth').value); // Get inches for door
-                const doorType = document.getElementById('doorType').value; // Get selected door type
                 const feature = {
                     x,
                     y,
@@ -11720,12 +11287,11 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 feature.height = parseFloat(document.getElementById('featureHeight').value); // Store door height in inches
                 feature.hinge = 'right'; // Default hinge side (right)
                 feature.swingDirection = 'in'; // Default swing direction (into room)
-                feature.doorType = doorType; // Use selected door type
+                feature.doorType = 'single'; // Default door type
                 room.doors.push(feature);
-                showToast(`🚪 ${doorType.charAt(0).toUpperCase() + doorType.slice(1)} door added - ${(width/12).toFixed(1)} ft wide`);
+                showToast(`🚪 Door added - ${(width/12).toFixed(1)} ft wide at ${edgePosition.toFixed(1)} ft from left`);
             } else if (state.currentFeature === 'window') {
                 const width = parseFloat(document.getElementById('featureWidth').value); // Get inches for window
-                const windowType = document.getElementById('windowType').value; // Get selected window type
                 const feature = {
                     x,
                     y,
@@ -11736,9 +11302,9 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 };
                 feature.heightFromFloor = heightFromFloor;
                 feature.height = parseFloat(document.getElementById('featureWindowHeight').value); // Get window height from input
-                feature.windowType = windowType; // Use selected window type
+                feature.windowType = 'double-hung'; // Default window type
                 room.windows.push(feature);
-                showToast(`🪟 ${windowType.charAt(0).toUpperCase() + windowType.slice(1).replace('-', ' ')} window added - ${(width/12).toFixed(1)} ft wide`);
+                showToast(`🪟 Window added - ${(width/12).toFixed(1)} ft wide at ${edgePosition.toFixed(1)} ft from left`);
             } else if (state.currentFeature === 'opening') {
                 // Add as wall cut/opening
                 if (!wall.cuts) wall.cuts = [];
@@ -11856,130 +11422,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             state.panY = canvasHeight / 2 - centerY * state.zoom;
             
             document.getElementById('zoomLevel').textContent = Math.round(state.zoom * 100) + '%';
-        }
-
-        // Check if click is on a wall dimension label
-        function checkDimensionLabelClick(room, x, y) {
-            if (!room || !room.walls) return null;
-            
-            for (let i = 0; i < room.walls.length; i++) {
-                const wall = room.walls[i];
-                if (!wall || !wall.start || !wall.end) continue;
-                
-                // Calculate wall midpoint where dimension label is drawn
-                const midX = (wall.start.x + wall.end.x) / 2;
-                const midY = (wall.start.y + wall.end.y) / 2;
-                
-                // Check if click is near the midpoint
-                const distance = Math.sqrt(Math.pow(x - midX, 2) + Math.pow(y - midY, 2));
-                const clickRadius = 40 / state.zoom; // Click area radius
-                
-                if (distance < clickRadius) {
-                    return { wallIndex: i, wall: wall };
-                }
-            }
-            return null;
-        }
-        
-        // Edit wall length when dimension label is clicked
-        function editWallLength(room, wallIndex) {
-            if (!room || !room.walls || !room.walls[wallIndex]) return;
-            
-            const wall = room.walls[wallIndex];
-            const currentLength = parseFloat(wall.length);
-            
-            // Convert current length to feet-inches
-            const feet = Math.floor(currentLength);
-            const inches = Math.round((currentLength - feet) * 12);
-            const currentText = inches === 0 ? `${feet}'` : `${feet}' ${inches}"`;
-            
-            // Prompt for new length
-            const newInput = prompt(`Edit wall ${wallIndex + 1} length:\n(Enter as feet'inches" like: 21'4" or just feet like: 15)`, currentText);
-            
-            if (newInput === null) return; // User cancelled
-            
-            // Parse input
-            let newLengthFeet;
-            if (newInput.includes("'")) {
-                const parts = newInput.split("'");
-                const ft = parseInt(parts[0]) || 0;
-                const inchPart = parts[1] ? parts[1].replace('"', '').trim() : '0';
-                const inch = parseInt(inchPart) || 0;
-                newLengthFeet = ft + (inch / 12);
-            } else {
-                newLengthFeet = parseFloat(newInput);
-            }
-            
-            if (isNaN(newLengthFeet) || newLengthFeet <= 0) {
-                showToast('❌ Invalid length entered');
-                return;
-            }
-            
-            // Save for undo
-            saveStateForUndo();
-            
-            // For 4-wall rooms, rebuild as perfect rectangle
-            if (room.floorPoints.length === 4) {
-                // Get current dimensions
-                const wall0Len = parseFloat(room.walls[0].length); // Top
-                const wall1Len = parseFloat(room.walls[1].length); // Right
-                const wall2Len = parseFloat(room.walls[2].length); // Bottom
-                const wall3Len = parseFloat(room.walls[3].length); // Left
-                
-                // Determine width and height
-                let width, height;
-                
-                if (wallIndex === 0 || wallIndex === 2) {
-                    // Editing horizontal wall (top or bottom)
-                    width = newLengthFeet;
-                    height = (wall1Len + wall3Len) / 2; // Average of vertical walls
-                } else {
-                    // Editing vertical wall (left or right)
-                    height = newLengthFeet;
-                    width = (wall0Len + wall2Len) / 2; // Average of horizontal walls
-                }
-                
-                // Get the first point as anchor (bottom-left corner)
-                const anchor = room.floorPoints[0];
-                
-                // Rebuild room as perfect rectangle starting from anchor
-                // Points go: bottom-left → bottom-right → top-right → top-left
-                room.floorPoints[0] = { x: anchor.x, y: anchor.y }; // Bottom-left
-                room.floorPoints[1] = { x: anchor.x + (width * 30), y: anchor.y }; // Bottom-right
-                room.floorPoints[2] = { x: anchor.x + (width * 30), y: anchor.y - (height * 30) }; // Top-right
-                room.floorPoints[3] = { x: anchor.x, y: anchor.y - (height * 30) }; // Top-left
-                
-            } else {
-                // Non-rectangular room - just update this wall
-                const dx = wall.end.x - wall.start.x;
-                const dy = wall.end.y - wall.start.y;
-                const currentLengthPixels = Math.sqrt(dx * dx + dy * dy);
-                const newLengthPixels = newLengthFeet * 30;
-                
-                if (currentLengthPixels > 0) {
-                    const scale = newLengthPixels / currentLengthPixels;
-                    wall.end.x = wall.start.x + (dx * scale);
-                    wall.end.y = wall.start.y + (dy * scale);
-                    
-                    const p2Index = (wallIndex + 1) % room.floorPoints.length;
-                    room.floorPoints[p2Index].x = wall.end.x;
-                    room.floorPoints[p2Index].y = wall.end.y;
-                }
-            }
-            
-            // Rebuild all walls from points
-            updateRoomWallsFromPoints(room);
-            
-            // Redraw
-            redraw2D();
-            if (state.currentView === '3d') render3D();
-            updateStats();
-            
-            if (room.floorPoints.length === 4) {
-                showToast(`✓ Room squared up to ${newLengthFeet.toFixed(1)} ft`);
-            } else {
-                showToast(`✓ Wall ${wallIndex + 1} updated to ${newLengthFeet.toFixed(1)} ft`);
-            }
         }
 
         function drawSingleRoom(room, offsetX, offsetZ, isCurrentRoom) {
@@ -15764,31 +15206,17 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             
             try {
                 console.log('Clearing scene objects... (Call #' + callId + ')');
-                console.log('Scene has', scene.children.length, 'children before clearing');
-                
-                // AGGRESSIVE CLEAR: Remove ALL objects except the first 2 lights
-                // Clear in reverse order to avoid index shifting
-                while (scene.children.length > 2) {
-                    const child = scene.children[scene.children.length - 1];
-                    console.log('Removing child:', child.type, child.uuid);
-                    scene.remove(child);
-                }
-                
-                console.log('Scene aggressively cleared, now has', scene.children.length, 'children (Call #' + callId + ')');
+                while(scene.children.length > 3) scene.remove(scene.children[3]);
+                console.log('Scene cleared, now has', scene.children.length, 'children (Call #' + callId + ')');
                 
                 // Calculate total width needed for all rooms to adjust camera
-                const totalRooms = state.rooms.filter(r => r.floorPoints && r.floorPoints.length >= 3).length;
+                const totalRooms = state.rooms.filter(r => r.floorPoints.length >= 3).length;
                 const roomSpacing = 30;
             
             console.log('Rendering 3D view, total rooms:', totalRooms);
-            console.log('state.rooms.length:', state.rooms.length);
             
             if (totalRooms === 0) {
-                console.log('✅ No rooms to render - rendering empty scene');
-                isRendering3D = false;
-                if (renderer && camera) {
-                    renderer.render(scene, camera);
-                }
+                console.log('WARNING: No rooms with floor points to render');
                 return;
             }
             
@@ -17217,7 +16645,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
         // Explicitly attach the key UI actions to window.
         try {
             window.addNewRoom = addNewRoom;
-            window.toggleRoomShapeEdit = toggleRoomShapeEdit;
             window.loadProject = loadProject;
             window.saveProject = saveProject;
             window.switch2D = switch2D;
@@ -17231,7 +16658,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             window.startZoomWindow = startZoomWindow;
             window.setDrawingMode = setDrawingMode;
             window.toggleOrthoMode = toggleOrthoMode;
-            window.toggleSnapMode = toggleSnapMode;
             window.setFeatureMode = setFeatureMode;
             window.toggleLeftPanel = toggleLeftPanel;
             window.selectFeature = selectFeature;
@@ -23122,18 +22548,10 @@ console.log('✅ Classes are ready - initialization will begin shortly...');
 console.log('🚀 Initializing estimator...');
 
 // LISTEN FOR CLAIM DATA FROM CLAIMS MANAGER (SETUP EARLY!)
-let claimDataLoaded = false; // Flag to prevent duplicate loads
 window.addEventListener('message', (event) => {
     if (event.data.type === 'LOAD_CLAIM_DATA') {
         const claimData = event.data.data;
         console.log('📥 Received claim data from Claims Manager:', claimData.claimName);
-        
-        // CRITICAL: Only load data once to prevent overwriting user's new rooms
-        if (claimDataLoaded) {
-            console.log('⏭️ Skipping duplicate load - data already loaded');
-            return;
-        }
-        claimDataLoaded = true;
         
         // Populate property data with client info
         const clientInfo = claimData.clientInfo || {};
@@ -23280,13 +22698,12 @@ window.addEventListener('message', (event) => {
                     // Force a render/redraw after a delay
                     setTimeout(() => {
                         console.log('🔄 Forcing UI update after delay...');
-                        if (typeof redraw2D === 'function') {
-                            console.log('   Calling redraw2D()...');
-                            redraw2D();
+                        if (typeof render2D === 'function') {
+                            console.log('   Calling render2D()...');
+                            render2D();
                         }
-                        // Only render 3D if we're actually in 3D mode
-                        if (state.currentView === '3d' && typeof render3D === 'function') {
-                            console.log('   Calling render3D() because in 3D mode...');
+                        if (typeof render3D === 'function') {
+                            console.log('   Calling render3D()...');
                             render3D();
                         }
                     }, 500);
@@ -23495,12 +22912,6 @@ function setDrawingMode(mode, event) {
         // Clear any feature mode
         state.currentFeature = null;
         
-        // CRITICAL: Disable room edit mode when entering wall drawing mode
-        state.roomEditMode = false;
-        state.draggingHandle = null;
-        state.hoveredHandle = null;
-        state.wallDragPreview = null;
-        
         // Clear feature button active states
         document.querySelectorAll('.feature-btn').forEach(b => b.classList.remove('active'));
         
@@ -23559,13 +22970,6 @@ function setDrawingMode(mode, event) {
         state.currentFeature = null;
         state.wallDrawingFirstCorner = null; // Clear wall drawing state
         state.wallDrawingCorners = [];
-        
-        // CRITICAL: Disable room edit mode when entering break mode
-        state.roomEditMode = false;
-        state.draggingHandle = null;
-        state.hoveredHandle = null;
-        state.wallDragPreview = null;
-        
         showToast('✂️ Break wall mode - Click a wall to cut it', 5000);
         
         const banner = document.getElementById('instructionBanner');
@@ -23599,12 +23003,6 @@ function setFeatureMode(feature, event) {
     state.wallDrawingFirstCorner = null;
     state.wallDrawingCorners = [];
     
-    // CRITICAL: Disable room edit mode when placing features
-    state.roomEditMode = false;
-    state.draggingHandle = null;
-    state.hoveredHandle = null;
-    state.wallDragPreview = null;
-    
     // Set feature placement mode
     state.currentFeature = feature;
     state.wallSelectionMode = true;
@@ -23630,61 +23028,6 @@ function setFeatureMode(feature, event) {
     
     // Redraw to show wall hover effects
     redraw2D();
-}
-
-// Clear all room data and start completely fresh
-function clearAllRoomData() {
-    if (!confirm('⚠️ DELETE ALL ROOMS?\n\nThis will permanently delete all rooms, doors, windows, and measurements.\n\nThis cannot be undone!')) {
-        return;
-    }
-    
-    console.log('🗑️ CLEARING ALL ROOM DATA');
-    
-    // Save for undo
-    saveStateForUndo();
-    
-    // Completely wipe state.rooms
-    state.rooms = [];
-    state.currentRoomIndex = -1;
-    
-    // Clear any drawing state
-    state.wallDrawingCorners = [];
-    state.wallDrawingFirstCorner = null;
-    
-    // Clear 3D scene completely
-    if (scene) {
-        console.log('💣 Clearing 3D scene');
-        while (scene.children.length > 0) {
-            const child = scene.children[0];
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) {
-                if (Array.isArray(child.material)) {
-                    child.material.forEach(mat => mat.dispose());
-                } else {
-                    child.material.dispose();
-                }
-            }
-            scene.remove(child);
-        }
-        
-        // Re-add lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight.position.set(30, 50, 30);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-    }
-    
-    // Update UI
-    updateRoomList();
-    redraw2D();
-    if (state.currentView === '3d') {
-        render3D();
-    }
-    
-    showToast('✅ All rooms deleted - Starting fresh!', 3000);
-    console.log('✅ All room data cleared');
 }
 
 function clearActiveToolMode() {
@@ -23742,27 +23085,6 @@ function toggleOrthoMode() {
     if (state.wallSelectionMode && !state.currentFeature) {
         redraw2D();
     }
-}
-
-function toggleSnapMode() {
-    state.snapMode = !state.snapMode;
-    
-    const snapBtn = document.getElementById('snapBtn');
-    if (state.snapMode) {
-        snapBtn.style.background = '#4CAF50';
-        snapBtn.style.color = 'white';
-        snapBtn.style.border = '1px solid #4CAF50';
-        snapBtn.title = 'Snap Mode (ON - walls snap together)';
-        showToast('🧲 SNAP ON - Walls snap together', 3000);
-    } else {
-        snapBtn.style.background = 'white';
-        snapBtn.style.color = '#333';
-        snapBtn.style.border = '1px solid #ccc';
-        snapBtn.title = 'Snap Mode (OFF - free positioning)';
-        showToast('🧲 SNAP OFF - Free positioning', 2000);
-    }
-    
-    console.log('Snap mode:', state.snapMode ? 'ON' : 'OFF');
 }
 
 function zoomAll() {
@@ -23920,24 +23242,8 @@ function executeZoomWindow(x1, y1, x2, y2) {
 
 // Add ESC key handler to clear active tool mode
 document.addEventListener('keydown', function(e) {
-    // Don't trigger shortcuts if typing in input field
-    if (e.target.matches('input, textarea, select')) return;
-    
     if (e.key === 'Escape') {
         clearActiveToolMode();
-    }
-    
-    // R key - Add new room (Xactimate)
-    if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        addNewRoom();
-        showToast('Press R to add room (Xactimate style)', 2000);
-    }
-    
-    // B key - Break tool (Xactimate) - for creating jogs
-    if (e.key === 'b' || e.key === 'B') {
-        e.preventDefault();
-        showToast('⚠️ Break tool (B) - Coming soon! Use edge handles for now', 3000);
     }
     
     // Ctrl+Z for Undo
@@ -23951,21 +23257,11 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         redo();
     }
-    
-    // Ctrl+Shift+C - Combine rooms (Xactimate)
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'c') {
-        e.preventDefault();
-        showToast('⚠️ Combine rooms (Ctrl+Shift+C) - Coming soon!', 3000);
-    }
 });
 
 console.log('✅ Xactimate-style toolbar initialized');
 console.log('   - Press ESC to exit any active tool or room edit mode');
-console.log('   - Press R to add new room');
-console.log('   - Press B for Break tool (create jogs)');
-console.log('   - CTRL+Drag from edge handle to create adjacent room');
 console.log('   - Press Ctrl+Z to undo, Ctrl+Y or Ctrl+Shift+Z to redo');
-console.log('   - Press Ctrl+Shift+C to combine rooms');
 console.log('   - Click room name to activate resize handles');
 console.log('   - Drag edge handles perpendicular to wall (ortho mode)');
 console.log('   - Click Wall tool to draw walls');
