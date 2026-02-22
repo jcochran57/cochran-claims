@@ -3859,37 +3859,45 @@
                 }
             }
             
-            // ===== CLICK INSIDE ROOM TO DRAG IT =====
-            if (e.button === 0 && !state.wallSelectionMode && !state.roomEditMode && !state.currentFeature) {
-                const room = getCurrentRoom();
-                if (room && room.floorPoints && room.floorPoints.length >= 3) {
-                    // Check if clicking inside current room
-                    let inside = false;
-                    for (let j = 0, k = room.floorPoints.length - 1; j < room.floorPoints.length; k = j++) {
-                        const xi = room.floorPoints[j].x;
-                        const yi = room.floorPoints[j].y;
-                        const xk = room.floorPoints[k].x;
-                        const yk = room.floorPoints[k].y;
-                        
-                        if ((yi > y) !== (yk > y) && x < (xk - xi) * (y - yi) / (yk - yi) + xi) {
-                            inside = !inside;
+            // ===== CLICK INSIDE ANY ROOM TO DRAG IT =====
+            if (e.button === 0 && !state.wallSelectionMode && !state.currentFeature && !state.hoveredHandle) {
+                // Check all rooms on current level
+                const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                for (let idx = 0; idx < roomsOnLevel.length; idx++) {
+                    const room = roomsOnLevel[idx];
+                    if (room.floorPoints && room.floorPoints.length >= 3) {
+                        // Check if clicking inside this room
+                        let inside = false;
+                        for (let j = 0, k = room.floorPoints.length - 1; j < room.floorPoints.length; k = j++) {
+                            const xi = room.floorPoints[j].x;
+                            const yi = room.floorPoints[j].y;
+                            const xk = room.floorPoints[k].x;
+                            const yk = room.floorPoints[k].y;
+                            
+                            if ((yi > y) !== (yk > y) && x < (xk - xi) * (y - yi) / (yk - yi) + xi) {
+                                inside = !inside;
+                            }
                         }
-                    }
-                    
-                    if (inside) {
-                        // Start dragging room
-                        state.draggingRoom = {
-                            roomIndex: state.currentRoomIndex,
-                            startX: x,
-                            startY: y,
-                            originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
-                        };
                         
-                        canvas2D.style.cursor = 'move';
-                        showToast(`🖐️ Drag to move ${room.name}`, 1500);
-                        console.log(`Click inside room - ready to drag ${room.name}`);
-                        redraw2D();
-                        return;
+                        if (inside) {
+                            const globalIndex = state.rooms.indexOf(room);
+                            
+                            // Start dragging THIS room
+                            state.draggingRoom = {
+                                roomIndex: globalIndex,
+                                startX: x,
+                                startY: y,
+                                originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
+                            };
+                            
+                            state.currentRoomIndex = globalIndex; // Switch to this room
+                            canvas2D.style.cursor = 'move';
+                            showToast(`🖐️ Drag to move ${room.name}`, 1500);
+                            console.log(`Click inside room - ready to drag ${room.name}`);
+                            updateRoomList();
+                            redraw2D();
+                            return;
+                        }
                     }
                 }
             }
