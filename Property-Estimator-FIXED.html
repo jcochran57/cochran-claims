@@ -3767,6 +3767,20 @@
                     // Save state for undo BEFORE starting to drag
                     saveStateForUndo();
                     
+                    // XACTIMATE: CTRL + drag from edge handle = Create adjacent room
+                    if (e.ctrlKey && state.hoveredHandle.type === 'edge') {
+                        console.log('🎯 XACTIMATE MODE: CTRL+Drag to create adjacent room');
+                        state.creatingAdjacentRoom = {
+                            sourceRoom: room,
+                            sourceRoomIndex: state.currentRoomIndex,
+                            edgeIndex: state.hoveredHandle.index,
+                            startX: x,
+                            startY: y
+                        };
+                        canvas2D.style.cursor = 'copy';
+                        return;
+                    }
+                    
                     if (state.hoveredHandle.type === 'corner') {
                         state.draggingHandle = {
                             type: 'corner',
@@ -4206,6 +4220,47 @@
                 if (!hoveringRoomName && !state.hoveredHandle) {
                     canvas2D.style.cursor = 'default';
                 }
+            }
+            
+            // ===== CREATING ADJACENT ROOM (XACTIMATE CTRL+DRAG) =====
+            if (state.creatingAdjacentRoom) {
+                const dx = x - state.creatingAdjacentRoom.startX;
+                const dy = y - state.creatingAdjacentRoom.startY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Only start creating if dragged at least 30 pixels
+                if (distance > 30) {
+                    const sourceRoom = state.creatingAdjacentRoom.sourceRoom;
+                    const edgeIndex = state.creatingAdjacentRoom.edgeIndex;
+                    const p1Index = edgeIndex;
+                    const p2Index = (edgeIndex + 1) % sourceRoom.floorPoints.length;
+                    
+                    // Get the edge being dragged from
+                    const edgeP1 = sourceRoom.floorPoints[p1Index];
+                    const edgeP2 = sourceRoom.floorPoints[p2Index];
+                    
+                    // Calculate perpendicular direction
+                    const edgeDx = edgeP2.x - edgeP1.x;
+                    const edgeDy = edgeP2.y - edgeP1.y;
+                    const edgeLength = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
+                    const perpDirX = -edgeDy / edgeLength;
+                    const perpDirY = edgeDx / edgeLength;
+                    
+                    // Project mouse movement onto perpendicular direction
+                    const perpDist = dx * perpDirX + dy * perpDirY;
+                    
+                    // Create preview room rectangle
+                    state.adjacentRoomPreview = {
+                        p1: {x: edgeP1.x, y: edgeP1.y},
+                        p2: {x: edgeP2.x, y: edgeP2.y},
+                        p3: {x: edgeP2.x + perpDirX * perpDist, y: edgeP2.y + perpDirY * perpDist},
+                        p4: {x: edgeP1.x + perpDirX * perpDist, y: edgeP1.y + perpDirY * perpDist},
+                        depth: Math.abs(perpDist) / 30  // in feet
+                    };
+                }
+                
+                redraw2D();
+                return;
             }
             
             // ===== ROOM DRAGGING =====
@@ -9903,6 +9958,55 @@ function confirmCutWall() {
         canvas2D.addEventListener('mouseup', (e) => {
             if (state.currentView !== '2d') return; // Only handle in 2D mode
             
+            // ===== CREATING ADJACENT ROOM END (XACTIMATE CTRL+DRAG) =====
+            if (state.creatingAdjacentRoom && state.adjacentRoomPreview) {
+                const preview = state.adjacentRoomPreview;
+                
+                // Only create if depth is at least 1 foot
+                if (preview.depth >= 1) {
+                    const sourceRoom = state.creatingAdjacentRoom.sourceRoom;
+                    
+                    // Create new room with the preview dimensions
+                    const newRoom = {
+                        name: `Room ${state.rooms.length + 1}`,
+                        level: state.currentLevel,
+                        floorPoints: [
+                            {x: preview.p1.x, y: preview.p1.y},
+                            {x: preview.p2.x, y: preview.p2.y},
+                            {x: preview.p3.x, y: preview.p3.y},
+                            {x: preview.p4.x, y: preview.p4.y}
+                        ],
+                        walls: [],
+                        doors: [],
+                        windows: [],
+                        // Copy properties from source room (Xactimate behavior)
+                        ceilingHeight: sourceRoom.ceilingHeight || 8,
+                        ceilingType: sourceRoom.ceilingType || 'Flat',
+                        floorType: sourceRoom.floorType || 'Standard'
+                    };
+                    
+                    // Calculate walls from floor points
+                    updateRoomWallsFromPoints(newRoom);
+                    
+                    // Add to rooms array
+                    state.rooms.push(newRoom);
+                    state.currentRoomIndex = state.rooms.length - 1;
+                    
+                    showToast(`✅ Adjacent room created! ${preview.depth.toFixed(1)}' deep`, 3000);
+                    console.log('✅ Created adjacent room using CTRL+Drag (Xactimate style)');
+                    
+                    updateRoomList();
+                    updateLevelButtons();
+                }
+                
+                // Clear preview
+                state.creatingAdjacentRoom = null;
+                state.adjacentRoomPreview = null;
+                canvas2D.style.cursor = 'default';
+                redraw2D();
+                return;
+            }
+            
             // ===== ROOM DRAG END =====
             if (state.draggingRoom) {
                 console.log(`✅ Finished dragging room`);
@@ -14566,6 +14670,45 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 }
             }
             // ===== END ROOM EDIT MODE HANDLES =====
+            
+            // ===== ADJACENT ROOM PREVIEW (XACTIMATE CTRL+DRAG) =====
+            if (state.adjacentRoomPreview) {
+                ctx.save();
+                ctx.translate(state.panX, state.panY);
+                ctx.scale(state.zoom, state.zoom);
+                
+                const preview = state.adjacentRoomPreview;
+                
+                // Draw preview room outline
+                ctx.strokeStyle = '#4CAF50';
+                ctx.lineWidth = 4 / state.zoom;
+                ctx.setLineDash([10 / state.zoom, 5 / state.zoom]);
+                
+                ctx.beginPath();
+                ctx.moveTo(preview.p1.x, preview.p1.y);
+                ctx.lineTo(preview.p2.x, preview.p2.y);
+                ctx.lineTo(preview.p3.x, preview.p3.y);
+                ctx.lineTo(preview.p4.x, preview.p4.y);
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Fill with semi-transparent green
+                ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+                ctx.fill();
+                
+                // Draw depth label
+                const centerX = (preview.p1.x + preview.p2.x + preview.p3.x + preview.p4.x) / 4;
+                const centerY = (preview.p1.y + preview.p2.y + preview.p3.y + preview.p4.y) / 4;
+                
+                ctx.setLineDash([]);
+                ctx.font = `bold ${16 / state.zoom}px Arial`;
+                ctx.fillStyle = '#4CAF50';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`🆕 ${preview.depth.toFixed(1)}' NEW ROOM`, centerX, centerY);
+                
+                ctx.restore();
+            }
             
             // ===== WALL DRAWING MODE VISUALS =====
             if (state.wallSelectionMode && !state.currentFeature && state.wallDrawingCorners && state.wallDrawingCorners.length > 0) {
@@ -23772,8 +23915,24 @@ function executeZoomWindow(x1, y1, x2, y2) {
 
 // Add ESC key handler to clear active tool mode
 document.addEventListener('keydown', function(e) {
+    // Don't trigger shortcuts if typing in input field
+    if (e.target.matches('input, textarea, select')) return;
+    
     if (e.key === 'Escape') {
         clearActiveToolMode();
+    }
+    
+    // R key - Add new room (Xactimate)
+    if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        addNewRoom();
+        showToast('Press R to add room (Xactimate style)', 2000);
+    }
+    
+    // B key - Break tool (Xactimate) - for creating jogs
+    if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        showToast('⚠️ Break tool (B) - Coming soon! Use edge handles for now', 3000);
     }
     
     // Ctrl+Z for Undo
@@ -23787,11 +23946,21 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         redo();
     }
+    
+    // Ctrl+Shift+C - Combine rooms (Xactimate)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        showToast('⚠️ Combine rooms (Ctrl+Shift+C) - Coming soon!', 3000);
+    }
 });
 
 console.log('✅ Xactimate-style toolbar initialized');
 console.log('   - Press ESC to exit any active tool or room edit mode');
+console.log('   - Press R to add new room');
+console.log('   - Press B for Break tool (create jogs)');
+console.log('   - CTRL+Drag from edge handle to create adjacent room');
 console.log('   - Press Ctrl+Z to undo, Ctrl+Y or Ctrl+Shift+Z to redo');
+console.log('   - Press Ctrl+Shift+C to combine rooms');
 console.log('   - Click room name to activate resize handles');
 console.log('   - Drag edge handles perpendicular to wall (ortho mode)');
 console.log('   - Click Wall tool to draw walls');
