@@ -1538,7 +1538,11 @@
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 z-index: 1001;
             ">
-                <!-- Options will be generated here -->
+                <option value="Basement">Basement (0)</option>
+                <option value="Main Floor" selected>Main Floor (0)</option>
+                <option value="2nd Floor">2nd Floor (0)</option>
+                <option value="3rd Floor">3rd Floor (0)</option>
+                <option value="Roof">Roof (0)</option>
             </select>
             <span id="levelRoomCount" style="font-weight: 600; color: white; font-size: 14px; margin-left: 10px; opacity: 0.9;">
                 <!-- Room count will appear here -->
@@ -1603,10 +1607,20 @@
                 <!-- Room tabs will be generated here -->
             </div>
             
-            <!-- Right: Add Room button -->
-            <button onclick="addNewRoom()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; flex-shrink: 0;">
-                + Add Room
-            </button>
+            <!-- Right: Add Room dropdown (Xactimate style) -->
+            <div style="position: relative; flex-shrink: 0;">
+                <button onclick="toggleAddRoomMenu()" id="addRoomBtn" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 8px;">
+                    + Add Room ▼
+                </button>
+                <div id="addRoomMenu" style="display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 2px solid #999; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 5px; min-width: 200px; z-index: 1000;">
+                    <button onclick="addNewRoom(); closeAddRoomMenu();" style="width: 100%; padding: 12px 16px; background: white; border: none; border-bottom: 1px solid #ddd; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600;">
+                        🏠 Quick Add
+                    </button>
+                    <button onclick="showDimensionRoomModal(); closeAddRoomMenu();" style="width: 100%; padding: 12px 16px; background: white; border: none; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600;">
+                        📐 Dimension Room
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     </div>
@@ -1683,6 +1697,42 @@
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button onclick="cancelAddRoom()" style="padding: 10px 20px; font-size: 14px; background: #ccc; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
                 <button onclick="confirmAddRoom()" style="padding: 10px 20px; font-size: 14px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Add Room</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dimension Room Modal (Xactimate style) -->
+    <div id="dimensionRoomModal" onclick="if(event.target === this) closeDimensionRoomModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 500px; width: 90%;">
+            <h3 style="margin: 0 0 20px 0; color: #1e3c72; font-size: 20px;">📐 Create Dimension Room</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Room Name:</label>
+                <input type="text" id="dimRoomName" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box;" placeholder="e.g., Living Room">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Width (ft):</label>
+                    <input type="number" id="dimRoomWidth" value="12" min="1" step="0.1" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Length (ft):</label>
+                    <input type="number" id="dimRoomLength" value="12" min="1" step="0.1" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Shape:</label>
+                <select id="dimRoomShape" style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #ddd; border-radius: 6px; box-sizing: border-box; background: white; cursor: pointer;">
+                    <option value="rectangle">Rectangle</option>
+                    <option value="square">Square</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeDimensionRoomModal()" style="padding: 10px 20px; font-size: 14px; background: #ccc; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+                <button onclick="createDimensionRoom()" style="padding: 10px 20px; font-size: 14px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Create Room</button>
             </div>
         </div>
     </div>
@@ -3641,6 +3691,7 @@
             
             generateWallInputs();
             updateRoomList();
+            updateLevelButtons(); // Populate level dropdown
             updateModeIndicator();
             redraw2D(); // Initialize canvas rendering
             
@@ -23188,6 +23239,94 @@ document.addEventListener('keydown', function(e) {
         redo();
     }
 });
+
+// Add Room Menu Toggle
+function toggleAddRoomMenu() {
+    const menu = document.getElementById('addRoomMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeAddRoomMenu() {
+    document.getElementById('addRoomMenu').style.display = 'none';
+}
+
+// Close menu if clicking outside
+document.addEventListener('click', function(e) {
+    const btn = document.getElementById('addRoomBtn');
+    const menu = document.getElementById('addRoomMenu');
+    if (menu && btn && !btn.contains(e.target) && !menu.contains(e.target)) {
+        closeAddRoomMenu();
+    }
+});
+
+// Dimension Room Modal
+function showDimensionRoomModal() {
+    const modal = document.getElementById('dimensionRoomModal');
+    modal.style.display = 'flex';
+    document.getElementById('dimRoomName').value = `Room ${state.rooms.length + 1}`;
+    document.getElementById('dimRoomName').focus();
+}
+
+function closeDimensionRoomModal() {
+    document.getElementById('dimensionRoomModal').style.display = 'none';
+}
+
+function createDimensionRoom() {
+    const name = document.getElementById('dimRoomName').value.trim();
+    const width = parseFloat(document.getElementById('dimRoomWidth').value);
+    const length = parseFloat(document.getElementById('dimRoomLength').value);
+    const shape = document.getElementById('dimRoomShape').value;
+    
+    if (!name) {
+        showToast('⚠️ Please enter a room name', 2000);
+        return;
+    }
+    
+    if (width <= 0 || length <= 0) {
+        showToast('⚠️ Width and length must be positive', 2000);
+        return;
+    }
+    
+    // If square is selected, make both dimensions equal
+    const finalLength = shape === 'square' ? width : length;
+    
+    // Create room with precise dimensions
+    const pixelWidth = width * 30; // 30px per foot
+    const pixelLength = finalLength * 30;
+    
+    // Center it on screen
+    const centerX = (canvas2D.width / state.zoom) / 2 - state.panX / state.zoom;
+    const centerY = (canvas2D.height / state.zoom) / 2 - state.panY / state.zoom;
+    
+    const newRoom = {
+        name: name,
+        level: state.currentLevel,
+        floorPoints: [
+            {x: centerX - pixelWidth/2, y: centerY - pixelLength/2},
+            {x: centerX + pixelWidth/2, y: centerY - pixelLength/2},
+            {x: centerX + pixelWidth/2, y: centerY + pixelLength/2},
+            {x: centerX - pixelWidth/2, y: centerY + pixelLength/2}
+        ],
+        walls: [],
+        doors: [],
+        windows: [],
+        ceilingHeight: 8,
+        ceilingType: 'Flat',
+        floorType: 'Standard'
+    };
+    
+    updateRoomWallsFromPoints(newRoom);
+    state.rooms.push(newRoom);
+    state.currentRoomIndex = state.rooms.length - 1;
+    
+    closeDimensionRoomModal();
+    updateRoomList();
+    updateLevelButtons();
+    redraw2D();
+    
+    showToast(`✅ ${name} created (${width}' x ${finalLength}')`, 3000);
+    console.log(`📐 Dimension room created: ${width}' x ${finalLength}'`);
+}
 
 console.log('✅ Xactimate-style toolbar initialized');
 console.log('   - Press ESC to exit any active tool or room edit mode');
