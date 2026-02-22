@@ -4520,8 +4520,8 @@
             
             // ===== ROOM EDIT MODE HANDLE HOVER DETECTION =====
             if (state.roomEditMode && !state.showAllRooms) {
-                const room = getCurrentRoom();
-                if (room && room.floorPoints) {
+                const editRoom = getCurrentRoom();
+                if (editRoom && editRoom.floorPoints) {
                     const HOVER_SIZE = 15 / state.zoom;
                     let foundHandle = null;
                     
@@ -4529,9 +4529,9 @@
                     // (Skip corner detection to prevent accidental selection)
                     
                     // Check edge handles
-                    for (let i = 0; i < room.floorPoints.length; i++) {
-                        const p1 = room.floorPoints[i];
-                        const p2 = room.floorPoints[(i + 1) % room.floorPoints.length];
+                    for (let i = 0; i < editRoom.floorPoints.length; i++) {
+                        const p1 = editRoom.floorPoints[i];
+                        const p2 = editRoom.floorPoints[(i + 1) % editRoom.floorPoints.length];
                         const midX = (p1.x + p2.x) / 2;
                         const midY = (p1.y + p2.y) / 2;
                         const dist = Math.sqrt(Math.pow(x - midX, 2) + Math.pow(y - midY, 2));
@@ -4940,10 +4940,10 @@
                 let minDist = Infinity;
                 let closestPoint = null;
                 
-                const numPoints = room.floorPoints.length;
+                const numPoints = currentRoom.floorPoints.length;
                 for (let i = 0; i < numPoints; i++) {
-                    const p1 = room.floorPoints[i];
-                    const p2 = room.floorPoints[(i + 1) % numPoints];
+                    const p1 = currentRoom.floorPoints[i];
+                    const p2 = currentRoom.floorPoints[(i + 1) % numPoints];
                     
                     const dist = distanceToLineSegment(x, y, p1.x, p1.y, p2.x, p2.y);
                     if (dist < 60 && dist < minDist) {  // Increased tolerance for easier hovering
@@ -4982,6 +4982,7 @@
                     redraw2D(); // Redraw to show the point indicator
                 }
             }
+        } // Close an unclosed block
         });
 
         function resizeCanvas() {
