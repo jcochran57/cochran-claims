@@ -3511,6 +3511,8 @@
             draggingHandle: null,  // NEW: Which handle is being dragged
             hoveredHandle: null,   // NEW: Which handle is being hovered
             wallDragPreview: null,  // NEW: Preview of wall position while dragging (Xactimate-style)
+            creatingAdjacentRoom: null,  // NEW: XACTIMATE - CTRL+Drag to create adjacent room
+            adjacentRoomPreview: null,   // NEW: XACTIMATE - Preview of adjacent room being created
             currentLevel: 'Main Floor',  // NEW: Current level/floor being edited
             levels: ['Basement', 'Main Floor', '2nd Floor', '3rd Floor', 'Roof']  // NEW: Available levels
         };
@@ -4276,25 +4278,25 @@
                     if (state.snapMode) {
                         const snapTolerance = 30; // pixels (1 foot at 30px/ft)
                         let snapped = false;
-                    let bestSnapOffsetX = 0;
-                    let bestSnapOffsetY = 0;
-                    let bestSnapDistance = Infinity;
-                    
-                    const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
-                    
-                    // Calculate temporary new positions
-                    const tempPoints = state.draggingRoom.originalPoints.map(p => ({
-                        x: p.x + dx,
-                        y: p.y + dy
-                    }));
-                    
-                    // Check each edge of the dragging room against each edge of other rooms
-                    for (const otherRoom of roomsOnLevel) {
-                        if (otherRoom === room) continue;
-                        if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
+                        let bestSnapOffsetX = 0;
+                        let bestSnapOffsetY = 0;
+                        let bestSnapDistance = Infinity;
                         
-                        // Check each edge of dragging room
-                        for (let i = 0; i < tempPoints.length; i++) {
+                        const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                        
+                        // Calculate temporary new positions
+                        const tempPoints = state.draggingRoom.originalPoints.map(p => ({
+                            x: p.x + dx,
+                            y: p.y + dy
+                        }));
+                        
+                        // Check each edge of the dragging room against each edge of other rooms
+                        for (const otherRoom of roomsOnLevel) {
+                            if (otherRoom === room) continue;
+                            if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
+                            
+                            // Check each edge of dragging room
+                            for (let i = 0; i < tempPoints.length; i++) {
                             const p1 = tempPoints[i];
                             const p2 = tempPoints[(i + 1) % tempPoints.length];
                             
@@ -4362,7 +4364,7 @@
                                 }
                             }
                         }
-                    
+                        
                         // Apply snap offset if snapped
                         if (snapped) {
                             dx += bestSnapOffsetX;
@@ -4371,8 +4373,10 @@
                         } else {
                             canvas2D.style.cursor = 'move';
                         }
-                    } else {
-                        // Snap mode disabled - just use move cursor
+                    }
+                    
+                    // If snap mode is off, just use regular cursor
+                    if (!state.snapMode) {
                         canvas2D.style.cursor = 'move';
                     }
                     
