@@ -1525,9 +1525,20 @@
         <!-- LEVEL/FLOOR SELECTOR - PROMINENT -->
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-bottom: 3px solid #5a67d8; padding: 15px 20px; display: flex; align-items: center; gap: 15px; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
             <span style="font-weight: 700; color: white; font-size: 16px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">📍 LEVEL:</span>
-            <div id="levelButtons" style="display: flex; gap: 8px;">
-                <!-- Level buttons will be generated here -->
-            </div>
+            <select id="levelSelector" onchange="switchLevel(this.value)" style="
+                padding: 8px 16px;
+                font-size: 15px;
+                font-weight: 600;
+                border: 2px solid white;
+                border-radius: 6px;
+                background: white;
+                color: #667eea;
+                cursor: pointer;
+                min-width: 160px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            ">
+                <!-- Options will be generated here -->
+            </select>
             <span id="levelRoomCount" style="font-weight: 600; color: white; font-size: 14px; margin-left: 10px; opacity: 0.9;">
                 <!-- Room count will appear here -->
             </span>
@@ -3634,14 +3645,14 @@
             console.log('✅ Zoom buttons initialized');
             console.log('Tool ready!');
             
-            // Initialize level buttons (with retry to ensure DOM is ready)
+            // Initialize level selector (with retry to ensure DOM is ready)
             function initLevelButtons() {
-                const container = document.getElementById('levelButtons');
-                if (container) {
+                const selector = document.getElementById('levelSelector');
+                if (selector) {
                     updateLevelButtons();
                     console.log('✅ Level selector initialized - 5 levels available');
                 } else {
-                    console.warn('Level buttons container not found, retrying...');
+                    console.warn('Level selector not found, retrying...');
                     setTimeout(initLevelButtons, 100);
                 }
             }
@@ -5277,48 +5288,29 @@
         }
 
         function updateLevelButtons() {
-            const container = document.getElementById('levelButtons');
-            if (!container) {
-                console.error('❌ Level buttons container not found!');
+            const selector = document.getElementById('levelSelector');
+            if (!selector) {
+                console.error('❌ Level selector not found!');
                 return;
             }
             
-            console.log(`Creating ${state.levels.length} level buttons:`, state.levels);
-            container.innerHTML = '';
+            console.log(`Populating level dropdown with ${state.levels.length} levels:`, state.levels);
+            selector.innerHTML = '';
             
             state.levels.forEach(level => {
                 // Count rooms on this level
                 const roomsOnLevel = state.rooms.filter(r => r.level === level).length;
                 
-                const btn = document.createElement('button');
-                btn.textContent = `${level} (${roomsOnLevel})`;
-                btn.className = 'view-btn';
-                btn.style.cssText = 'padding: 10px 18px; font-size: 14px; font-weight: 600; border: 2px solid white; transition: all 0.2s;';
+                const option = document.createElement('option');
+                option.value = level;
+                option.textContent = `${level} (${roomsOnLevel})`;
                 
                 if (level === state.currentLevel) {
-                    btn.style.background = 'white';
-                    btn.style.color = '#667eea';
-                    btn.style.transform = 'scale(1.05)';
-                    btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
-                } else {
-                    btn.style.background = 'rgba(255,255,255,0.2)';
-                    btn.style.color = 'white';
+                    option.selected = true;
                 }
                 
-                btn.onclick = () => switchLevel(level);
-                btn.onmouseover = () => {
-                    if (level !== state.currentLevel) {
-                        btn.style.background = 'rgba(255,255,255,0.3)';
-                    }
-                };
-                btn.onmouseout = () => {
-                    if (level !== state.currentLevel) {
-                        btn.style.background = 'rgba(255,255,255,0.2)';
-                    }
-                };
-                
-                container.appendChild(btn);
-                console.log(`  ✓ Created button: ${level} (${roomsOnLevel} rooms)`);
+                selector.appendChild(option);
+                console.log(`  ✓ Added option: ${level} (${roomsOnLevel} rooms)`);
             });
             
             // Update room count display
@@ -5330,7 +5322,7 @@
                                           `${roomsOnCurrentLevel} rooms`;
             }
             
-            console.log(`✅ Level buttons updated - ${container.children.length} buttons visible`);
+            console.log(`✅ Level dropdown updated - ${selector.options.length} options available`);
         }
 
         function updateRoomPosition() {
