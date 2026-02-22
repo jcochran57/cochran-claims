@@ -4150,7 +4150,49 @@
                 }
             }
             
-            // Room dragging in show all rooms mode
+            // Room dragging - click anywhere on room to drag it (Xactimate style)
+            if (e.button === 0 && !e.shiftKey && !state.roomEditMode && !state.wallSelectionMode && !state.currentFeature) {
+                // Check if clicking on current room
+                const room = getCurrentRoom();
+                if (room && room.floorPoints.length >= 3) {
+                    const offsetX = (room.positionX || 0) * 30;
+                    const offsetZ = (room.positionZ || 0) * 30;
+                    
+                    // Check if point is inside current room polygon
+                    let inside = false;
+                    for (let j = 0, k = room.floorPoints.length - 1; j < room.floorPoints.length; k = j++) {
+                        const xi = room.floorPoints[j].x + offsetX;
+                        const yi = room.floorPoints[j].y + offsetZ;
+                        const xk = room.floorPoints[k].x + offsetX;
+                        const yk = room.floorPoints[k].y + offsetZ;
+                        
+                        if ((yi > y) !== (yk > y) && x < (xk - xi) * (y - yi) / (yk - yi) + xi) {
+                            inside = !inside;
+                        }
+                    }
+                    
+                    if (inside) {
+                        state.draggingRoom = state.currentRoomIndex;
+                        state.dragStartX = x;
+                        state.dragStartY = y;
+                        
+                        // Store original positions for each point
+                        state.draggingRoom = {
+                            roomIndex: state.currentRoomIndex,
+                            startX: x,
+                            startY: y,
+                            originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
+                        };
+                        
+                        canvas2D.style.cursor = 'move';
+                        showToast(`🖐️ Drag to move ${room.name}`, 1500);
+                        console.log(`Started dragging room: ${room.name}`);
+                        return;
+                    }
+                }
+            }
+            
+            // Room dragging in show all rooms mode (for switching between rooms)
             if (state.showAllRooms && e.button === 0 && !e.shiftKey) {
                 // Check if clicking on any room
                 for (let i = state.rooms.length - 1; i >= 0; i--) {
@@ -4562,8 +4604,37 @@
                 }
             }
             
-            // Room dragging
-            if (state.draggingRoom !== null) {
+            // Room dragging (NEW - works with object structure)
+            if (state.draggingRoom !== null && typeof state.draggingRoom === 'object' && state.draggingRoom.roomIndex !== undefined) {
+                const room = state.rooms[state.draggingRoom.roomIndex];
+                if (room && room.floorPoints) {
+                    // Calculate offset from drag start
+                    let dx = x - state.draggingRoom.startX;
+                    let dy = y - state.draggingRoom.startY;
+                    
+                    // Move all floor points
+                    for (let i = 0; i < room.floorPoints.length; i++) {
+                        room.floorPoints[i].x = state.draggingRoom.originalPoints[i].x + dx;
+                        room.floorPoints[i].y = state.draggingRoom.originalPoints[i].y + dy;
+                    }
+                    
+                    // Move all walls
+                    if (room.walls) {
+                        room.walls.forEach((wall, idx) => {
+                            const p1Index = idx;
+                            const p2Index = (idx + 1) % room.floorPoints.length;
+                            wall.start = {x: room.floorPoints[p1Index].x, y: room.floorPoints[p1Index].y};
+                            wall.end = {x: room.floorPoints[p2Index].x, y: room.floorPoints[p2Index].y};
+                        });
+                    }
+                    
+                    redraw2D();
+                    return;
+                }
+            }
+            
+            // Room dragging (OLD - for show all rooms mode with number index)
+            if (state.draggingRoom !== null && typeof state.draggingRoom === 'number') {
                 const room = state.rooms[state.draggingRoom];
                 const dx = (x - state.dragStartX) / 30; // Convert pixels to position units
                 const dy = (y - state.dragStartY) / 30;
