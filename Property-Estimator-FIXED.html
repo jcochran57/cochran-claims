@@ -9966,22 +9966,32 @@ function confirmCutWall() {
                                 const adjP1 = adjRoom.floorPoints[adjP1Index];
                                 const adjP2 = adjRoom.floorPoints[adjP2Index];
                                 
-                                const tolerance = 1; // 1 pixel tolerance for floating point errors
-                                const adjP1MatchesOurP1 = Math.abs(adjP1.x - movingP1.x) < tolerance && 
-                                                          Math.abs(adjP1.y - movingP1.y) < tolerance;
+                                const tolerance = 5; // 5 pixel tolerance for matching
+                                const dist_adjP1_to_movingP1 = Math.sqrt(Math.pow(adjP1.x - movingP1.x, 2) + Math.pow(adjP1.y - movingP1.y, 2));
+                                const dist_adjP1_to_movingP2 = Math.sqrt(Math.pow(adjP1.x - movingP2.x, 2) + Math.pow(adjP1.y - movingP2.y, 2));
                                 
-                                if (adjP1MatchesOurP1) {
+                                console.log('🔧 Shared wall update:');
+                                console.log('  Our room:', room.name, '- moving points', p1Index, 'and', p2Index);
+                                console.log('  Adjacent room:', adjRoom.name, '- points', adjP1Index, 'and', adjP2Index);
+                                console.log('  Distance adjP1 to our old P1:', dist_adjP1_to_movingP1.toFixed(1));
+                                console.log('  Distance adjP1 to our old P2:', dist_adjP1_to_movingP2.toFixed(1));
+                                
+                                if (dist_adjP1_to_movingP1 < tolerance) {
                                     // Same direction: adj p1 -> our p1, adj p2 -> our p2
+                                    console.log('  ✅ Same direction - updating normally');
                                     adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p1.x;
                                     adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p1.y;
                                     adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p2.x;
                                     adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p2.y;
-                                } else {
+                                } else if (dist_adjP1_to_movingP2 < tolerance) {
                                     // Reversed direction: adj p1 -> our p2, adj p2 -> our p1
+                                    console.log('  🔄 Reversed direction - swapping points');
                                     adjRoom.floorPoints[adjP1Index].x = state.wallDragPreview.p2.x;
                                     adjRoom.floorPoints[adjP1Index].y = state.wallDragPreview.p2.y;
                                     adjRoom.floorPoints[adjP2Index].x = state.wallDragPreview.p1.x;
                                     adjRoom.floorPoints[adjP2Index].y = state.wallDragPreview.p1.y;
+                                } else {
+                                    console.warn('  ⚠️ Could not determine direction - distances too large!');
                                 }
                                 
                                 updateRoomWallsFromPoints(adjRoom);
