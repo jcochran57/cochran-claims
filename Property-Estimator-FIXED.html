@@ -3820,8 +3820,8 @@
                 }
             }
             
-            // ===== ROOM NAME CLICK DETECTION - Activate handles like Xactimate =====
-            // Allow clicking room names even when already in edit mode (for room switching)
+            // ===== ROOM NAME CLICK DETECTION - Start dragging room =====
+            // Click room name to start dragging the room
             if (e.button === 0) {
                 // Check all rooms to see if we clicked on a room name
                 for (let i = 0; i < state.rooms.length; i++) {
@@ -3836,33 +3836,23 @@
                         if (x >= centerX - halfWidth && x <= centerX + halfWidth &&
                             y >= centerY - halfHeight && y <= centerY + halfHeight) {
                             
-                            // Switch to this room and activate edit mode
+                            // Switch to this room
                             state.currentRoomIndex = i;
-                            state.roomEditMode = true;
                             
-                            // ONLY clear feature modes if we're NOT actively placing a feature
-                            if (!state.currentFeature) {
-                                state.wallSelectionMode = false;
-                            }
+                            // Start dragging THIS room
+                            state.draggingRoom = {
+                                roomIndex: i,
+                                startX: x,
+                                startY: y,
+                                originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
+                            };
                             
-                            state.draggingHandle = null; // Clear any active handle dragging
-                            state.hoveredHandle = null; // Clear handle hover
-                            
-                            // Clear toolbar buttons
-                            document.querySelectorAll('.toolbar-btn').forEach(btn => {
-                                btn.classList.remove('toolbar-btn-active');
-                            });
+                            canvas2D.style.cursor = 'move';
+                            showToast(`🖐️ Drag to move ${room.name}`, 1500);
+                            console.log(`Clicked room name: ${room.name} - ready to drag`);
                             
                             updateRoomList();
-                            canvas2D.style.cursor = 'default';
-                            
-                            // Show room properties modal
-                            showRoomProperties(i);
-                            
-                            console.log(`✅ Clicked room name: ${room.name} - properties shown, handles activated`);
-                            
                             redraw2D();
-                            updateStats();
                             return;
                         }
                     }
