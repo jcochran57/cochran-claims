@@ -9635,12 +9635,54 @@ function confirmCutWall() {
                     // Calculate walls from floor points
                     updateRoomWallsFromPoints(newRoom);
                     
+                    // XACTIMATE: Mark shared wall as MISSING in both rooms
+                    // This ensures correct floor/ceiling area calculation
+                    const sourceEdgeIndex = state.creatingAdjacentRoom.edgeIndex;
+                    
+                    // Mark wall as missing in SOURCE room by adding a full-wall opening
+                    if (sourceRoom.walls && sourceRoom.walls[sourceEdgeIndex]) {
+                        const wall = sourceRoom.walls[sourceEdgeIndex];
+                        const wallLength = Math.sqrt(
+                            Math.pow(wall.end.x - wall.start.x, 2) + 
+                            Math.pow(wall.end.y - wall.start.y, 2)
+                        ) / 30; // Convert to feet
+                        
+                        wall.cuts = wall.cuts || [];
+                        wall.cuts.push({
+                            startDist: 0,
+                            endDist: wallLength,
+                            isOpening: true,
+                            isMissing: true  // Full wall missing
+                        });
+                        console.log(`✓ Marked wall ${sourceEdgeIndex} as MISSING in ${sourceRoom.name} (${wallLength.toFixed(1)}' opening)`);
+                    }
+                    
+                    // Find the matching wall in NEW room (the wall that touches the source room)
+                    // The new room's first edge (p1->p2) is the shared wall
+                    if (newRoom.walls && newRoom.walls[0]) {
+                        const wall = newRoom.walls[0];
+                        const wallLength = Math.sqrt(
+                            Math.pow(wall.end.x - wall.start.x, 2) + 
+                            Math.pow(wall.end.y - wall.start.y, 2)
+                        ) / 30; // Convert to feet
+                        
+                        wall.cuts = wall.cuts || [];
+                        wall.cuts.push({
+                            startDist: 0,
+                            endDist: wallLength,
+                            isOpening: true,
+                            isMissing: true  // Full wall missing
+                        });
+                        console.log(`✓ Marked wall 0 as MISSING in ${newRoom.name} (${wallLength.toFixed(1)}' opening)`);
+                    }
+                    
                     // Add to rooms array
                     state.rooms.push(newRoom);
                     state.currentRoomIndex = state.rooms.length - 1;
                     
-                    showToast(`✅ Adjacent room created! ${preview.depth.toFixed(1)}' deep`, 3000);
+                    showToast(`✅ Adjacent room created! Shared wall marked as missing.`, 3000);
                     console.log('✅ Created adjacent room using CTRL+Drag (Xactimate style)');
+                    console.log('   Shared walls marked as MISSING for accurate area calculation');
                     
                     updateRoomList();
                     updateLevelButtons();
@@ -9798,7 +9840,22 @@ function confirmCutWall() {
                 return;
             }
             
-            if (state.draggingRoom !== null) {
+            // Handle room dragging end (NEW object structure)
+            if (state.draggingRoom !== null && typeof state.draggingRoom === 'object' && state.draggingRoom.roomIndex !== undefined) {
+                const room = state.rooms[state.draggingRoom.roomIndex];
+                showToast(`✅ ${room.name} moved`, 2000);
+                console.log(`Room ${room.name} placed at new location`);
+                state.draggingRoom = null;
+                canvas2D.style.cursor = 'default';
+                redraw2D();
+                if (state.currentView === '3d') {
+                    render3D();
+                }
+                return;
+            }
+            
+            // Handle room dragging end (OLD number structure for Show All Rooms mode)
+            if (state.draggingRoom !== null && typeof state.draggingRoom === 'number') {
                 const room = state.rooms[state.draggingRoom];
                 if (state.lastSnapped) {
                     const snapMsg = state.snapType ? 
