@@ -1594,6 +1594,20 @@
                 </button>
             </div>
         </div>
+        
+        <!-- BOTTOM RIBBON - Room Tabs (SketchUp style) -->
+        <div style="background: white; border-top: 2px solid #999; padding: 10px 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); overflow-x: auto; max-height: 80px;">
+            <!-- Left: Room tabs -->
+            <div id="roomList" style="display: flex; gap: 8px; flex: 1; overflow-x: auto; flex-wrap: nowrap;">
+                <!-- Room tabs will be generated here -->
+            </div>
+            
+            <!-- Right: Add Room button -->
+            <button onclick="addNewRoom()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; flex-shrink: 0;">
+                + Add Room
+            </button>
+        </div>
+    </div>
     </div>
 
     
@@ -7997,43 +8011,31 @@ function showPositionModal(featureType, featureIndex) {
                 const i = state.rooms.indexOf(room);  // Get index in full rooms array
                 
                 const div = document.createElement('div');
-                div.className = 'room-item' + (i === state.currentRoomIndex ? ' active' : '');
-                div.style.display = 'flex';
-                div.style.alignItems = 'center';
-                div.style.gap = '5px';
+                div.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 15px;
+                    background: ${i === state.currentRoomIndex ? '#4CAF50' : 'white'};
+                    color: ${i === state.currentRoomIndex ? 'white' : '#333'};
+                    border: 2px solid ${i === state.currentRoomIndex ? '#4CAF50' : '#999'};
+                    border-radius: 4px 4px 0 0;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: ${i === state.currentRoomIndex ? '700' : '500'};
+                    white-space: nowrap;
+                    min-width: 120px;
+                `;
                 
-                // Create room name text (not clickable, just display)
+                // Create room name - clicking it activates edit mode
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = room.name;
-                nameSpan.style.cssText = 'flex: 1; padding: 8px;';
-                
-                // Create EDIT NAME button - very obvious
-                const editNameBtn = document.createElement('button');
-                editNameBtn.textContent = '✏️';
-                editNameBtn.style.cssText = 'padding: 6px 10px; font-size: 14px; background: #FFA500; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;';
-                editNameBtn.title = 'Edit room name';
-                editNameBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    console.log('===== EDIT NAME BUTTON CLICKED =====');
-                    console.log('Room index:', i);
-                    console.log('Current name:', room.name);
-                    showEditNameModal(i);
-                });
-                
-                // Create edit measurements button
-                const editMeasureBtn = document.createElement('button');
-                editMeasureBtn.textContent = '📏';
-                editMeasureBtn.style.cssText = 'padding: 6px 10px; font-size: 14px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;';
-                editMeasureBtn.title = 'Edit measurements';
-                editMeasureBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    editRoomMeasurements(i);
-                });
+                nameSpan.style.cssText = 'flex: 1;';
                 
                 // Create delete button
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = '×';
-                deleteBtn.style.cssText = 'padding: 6px 10px; font-size: 18px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;';
+                deleteBtn.style.cssText = 'padding: 2px 6px; font-size: 16px; background: rgba(244,67,54,0.2); color: #f44336; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;';
                 deleteBtn.title = 'Delete room';
                 deleteBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -8041,14 +8043,16 @@ function showPositionModal(featureType, featureIndex) {
                 });
                 
                 div.appendChild(nameSpan);
-                div.appendChild(editNameBtn);
-                div.appendChild(editMeasureBtn);
                 div.appendChild(deleteBtn);
                 
-                // Click on the row to switch rooms
+                // Click on the tab to switch rooms AND activate edit mode
                 div.addEventListener('click', function() {
-                    console.log('Switching to room', i);
+                    console.log('Switching to room', i, 'and activating edit mode');
                     switchRoom(i);
+                    // Activate edit mode so handles show
+                    if (!state.roomEditMode) {
+                        enterEditMode();
+                    }
                 });
                 
                 list.appendChild(div);
