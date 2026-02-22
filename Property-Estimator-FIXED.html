@@ -3882,6 +3882,9 @@
                         if (inside) {
                             const globalIndex = state.rooms.indexOf(room);
                             
+                            // TEST: Alert to verify click is detected
+                            alert(`Clicked ${room.name} - starting drag`);
+                            
                             // Start dragging THIS room
                             state.draggingRoom = {
                                 roomIndex: globalIndex,
