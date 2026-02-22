@@ -23242,8 +23242,18 @@ function executeZoomWindow(x1, y1, x2, y2) {
 
 // Add ESC key handler to clear active tool mode
 document.addEventListener('keydown', function(e) {
+    // Don't trigger shortcuts if typing in input field
+    if (e.target.matches('input, textarea, select')) return;
+    
     if (e.key === 'Escape') {
         clearActiveToolMode();
+    }
+    
+    // R key - Add new room (Xactimate)
+    if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        addNewRoom();
+        showToast('📦 New room added! Press R anytime to add more.', 2000);
     }
     
     // Ctrl+Z for Undo
@@ -23261,6 +23271,8 @@ document.addEventListener('keydown', function(e) {
 
 console.log('✅ Xactimate-style toolbar initialized');
 console.log('   - Press ESC to exit any active tool or room edit mode');
+console.log('   - Press R to add new room (Xactimate)');
+console.log('   - CTRL+Drag from edge handle to create adjacent room');
 console.log('   - Press Ctrl+Z to undo, Ctrl+Y or Ctrl+Shift+Z to redo');
 console.log('   - Click room name to activate resize handles');
 console.log('   - Drag edge handles perpendicular to wall (ortho mode)');
