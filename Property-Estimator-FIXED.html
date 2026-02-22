@@ -3882,9 +3882,6 @@
                         if (inside) {
                             const globalIndex = state.rooms.indexOf(room);
                             
-                            // TEST: Alert to verify click is detected
-                            alert(`Clicked ${room.name} - starting drag`);
-                            
                             // Start dragging THIS room
                             state.draggingRoom = {
                                 roomIndex: globalIndex,
@@ -9972,7 +9969,7 @@ function confirmCutWall() {
                 const room = state.rooms[state.draggingRoom.roomIndex];
                 
                 // Check for shared walls with other rooms and mark them as missing
-                const snapTolerance = 5; // 5px for final alignment check
+                const snapTolerance = 15; // 15px tolerance for shared wall detection
                 const roomsOnLevel = state.rooms.filter((r, idx) => 
                     r.level === state.currentLevel && 
                     idx !== state.draggingRoom.roomIndex
@@ -9981,6 +9978,8 @@ function confirmCutWall() {
                 for (let edgeIdx = 0; edgeIdx < room.floorPoints.length; edgeIdx++) {
                     const p1 = room.floorPoints[edgeIdx];
                     const p2 = room.floorPoints[(edgeIdx + 1) % room.floorPoints.length];
+                    const edgeLen = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                    if (edgeLen < 10) continue; // Skip very short edges
                     
                     for (const otherRoom of roomsOnLevel) {
                         if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
@@ -9988,49 +9987,66 @@ function confirmCutWall() {
                         for (let otherEdgeIdx = 0; otherEdgeIdx < otherRoom.floorPoints.length; otherEdgeIdx++) {
                             const op1 = otherRoom.floorPoints[otherEdgeIdx];
                             const op2 = otherRoom.floorPoints[(otherEdgeIdx + 1) % otherRoom.floorPoints.length];
+                            const otherEdgeLen = Math.sqrt(Math.pow(op2.x - op1.x, 2) + Math.pow(op2.y - op1.y, 2));
+                            if (otherEdgeLen < 10) continue;
                             
-                            // Check if walls are aligned (either same direction or opposite)
-                            const p1ToOp1 = Math.sqrt(Math.pow(p1.x - op1.x, 2) + Math.pow(p1.y - op1.y, 2));
-                            const p2ToOp2 = Math.sqrt(Math.pow(p2.x - op2.x, 2) + Math.pow(p2.y - op2.y, 2));
-                            const p1ToOp2 = Math.sqrt(Math.pow(p1.x - op2.x, 2) + Math.pow(p1.y - op2.y, 2));
-                            const p2ToOp1 = Math.sqrt(Math.pow(p2.x - op1.x, 2) + Math.pow(p2.y - op1.y, 2));
+                            // Check if edges are parallel
+                            const dir1x = (p2.x - p1.x) / edgeLen;
+                            const dir1y = (p2.y - p1.y) / edgeLen;
+                            const dir2x = (op2.x - op1.x) / otherEdgeLen;
+                            const dir2y = (op2.y - op1.y) / otherEdgeLen;
+                            const dot = Math.abs(dir1x * dir2x + dir1y * dir2y);
                             
-                            // Walls are shared if endpoints match
-                            if ((p1ToOp1 < snapTolerance && p2ToOp2 < snapTolerance) || 
-                                (p1ToOp2 < snapTolerance && p2ToOp1 < snapTolerance)) {
+                            if (dot > 0.98) { // Parallel (within ~11 degrees)
+                                // Calculate perpendicular distance between parallel lines
+                                const perpX = -dir1y;
+                                const perpY = dir1x;
+                                const toOtherX = op1.x - p1.x;
+                                const toOtherY = op1.y - p1.y;
+                                const perpDist = Math.abs(toOtherX * perpX + toOtherY * perpY);
                                 
-                                console.log(`🔗 Shared wall detected between ${room.name} and ${otherRoom.name}`);
-                                
-                                // Mark walls as missing (opening)
-                                const wallLength = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)) / 30;
-                                
-                                // Mark in current room
-                                if (!room.walls) updateRoomWallsFromPoints(room);
-                                if (room.walls && room.walls[edgeIdx]) {
-                                    room.walls[edgeIdx].cuts = room.walls[edgeIdx].cuts || [];
-                                    room.walls[edgeIdx].cuts.push({
-                                        startDist: 0,
-                                        endDist: wallLength,
-                                        isOpening: true,
-                                        isMissing: true
-                                    });
-                                    console.log(`  ✓ Marked wall ${edgeIdx} as MISSING in ${room.name}`);
+                                if (perpDist < snapTolerance) {
+                                    // Walls are parallel and close - this is a shared wall!
+                                    console.log(`🔗 Shared wall detected! ${room.name} edge ${edgeIdx} ↔ ${otherRoom.name} edge ${otherEdgeIdx} (${perpDist.toFixed(1)}px apart)`);
+                                    
+                                    // Mark walls as missing (opening)
+                                    const wallLength = edgeLen / 30;
+                                    
+                                    // Mark in current room
+                                    if (!room.walls) updateRoomWallsFromPoints(room);
+                                    if (room.walls && room.walls[edgeIdx]) {
+                                        room.walls[edgeIdx].cuts = room.walls[edgeIdx].cuts || [];
+                                        // Check if not already marked
+                                        const alreadyMarked = room.walls[edgeIdx].cuts.some(c => c.isMissing);
+                                        if (!alreadyMarked) {
+                                            room.walls[edgeIdx].cuts.push({
+                                                startDist: 0,
+                                                endDist: wallLength,
+                                                isOpening: true,
+                                                isMissing: true
+                                            });
+                                            console.log(`  ✓ Marked wall ${edgeIdx} as MISSING in ${room.name}`);
+                                        }
+                                    }
+                                    
+                                    // Mark in other room
+                                    if (!otherRoom.walls) updateRoomWallsFromPoints(otherRoom);
+                                    if (otherRoom.walls && otherRoom.walls[otherEdgeIdx]) {
+                                        otherRoom.walls[otherEdgeIdx].cuts = otherRoom.walls[otherEdgeIdx].cuts || [];
+                                        const alreadyMarked = otherRoom.walls[otherEdgeIdx].cuts.some(c => c.isMissing);
+                                        if (!alreadyMarked) {
+                                            otherRoom.walls[otherEdgeIdx].cuts.push({
+                                                startDist: 0,
+                                                endDist: otherEdgeLen / 30,
+                                                isOpening: true,
+                                                isMissing: true
+                                            });
+                                            console.log(`  ✓ Marked wall ${otherEdgeIdx} as MISSING in ${otherRoom.name}`);
+                                        }
+                                    }
+                                    
+                                    showToast(`✅ ${room.name} connected! Shared wall marked as missing.`, 3000);
                                 }
-                                
-                                // Mark in other room
-                                if (!otherRoom.walls) updateRoomWallsFromPoints(otherRoom);
-                                if (otherRoom.walls && otherRoom.walls[otherEdgeIdx]) {
-                                    otherRoom.walls[otherEdgeIdx].cuts = otherRoom.walls[otherEdgeIdx].cuts || [];
-                                    otherRoom.walls[otherEdgeIdx].cuts.push({
-                                        startDist: 0,
-                                        endDist: wallLength,
-                                        isOpening: true,
-                                        isMissing: true
-                                    });
-                                    console.log(`  ✓ Marked wall ${otherEdgeIdx} as MISSING in ${otherRoom.name}`);
-                                }
-                                
-                                showToast(`✅ ${room.name} snapped! Shared wall marked as missing.`, 3000);
                             }
                         }
                     }
