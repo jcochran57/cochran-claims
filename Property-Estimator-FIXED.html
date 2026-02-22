@@ -9686,6 +9686,7 @@ function confirmCutWall() {
                     
                     updateRoomList();
                     updateLevelButtons();
+                    render3D(); // Update 3D view
                 }
                 
                 // Clear preview
@@ -9848,9 +9849,7 @@ function confirmCutWall() {
                 state.draggingRoom = null;
                 canvas2D.style.cursor = 'default';
                 redraw2D();
-                if (state.currentView === '3d') {
-                    render3D();
-                }
+                render3D(); // Always update 3D
                 return;
             }
             
@@ -23441,6 +23440,7 @@ function createDimensionRoom() {
     updateRoomList();
     updateLevelButtons();
     redraw2D();
+    render3D(); // Update 3D view
     
     showToast(`✅ ${name} created (${width}' x ${finalLength}')`, 3000);
     console.log(`📐 Dimension room created: ${width}' x ${finalLength}'`);
