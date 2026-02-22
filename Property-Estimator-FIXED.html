@@ -12050,27 +12050,30 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                         
                         // Check if this is a missingWall (opening) or a regular cut
                         const isMissingWall = cut.isOpening === true;
+                        const isFullWallMissing = cut.isMissing === true; // Full shared wall
                         
-                        if (isMissingWall) {
-                            // OPENING - Show dimension label in colored box (like doors/windows)
-                            const openingWidthFeet = cut.endDist - cut.startDist;
-                            const openingFeet = Math.floor(openingWidthFeet);
-                            const openingInches = Math.round((openingWidthFeet - openingFeet) * 12);
-                            const dimensionText = openingInches > 0 
-                                ? `${openingFeet}' ${openingInches}"` 
-                                : `${openingFeet}'`;
-                            
-                            ctx.save();
-                            ctx.setLineDash([]);
-                            ctx.font = `bold ${11 / state.zoom}px Arial`;
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            
-                            // Position label
-                            const centerX = wall.start.x + unitX * midPixel;
-                            const centerY = wall.start.y + unitY * midPixel;
-                            const labelOffsetX = perpX * 1.8; // Offset perpendicular to wall
-                            const labelOffsetY = perpY * 1.8;
+                        // Don't show labels for full shared walls
+                        if (!isFullWallMissing) {
+                            if (isMissingWall) {
+                                // OPENING - Show dimension label in colored box (like doors/windows)
+                                const openingWidthFeet = cut.endDist - cut.startDist;
+                                const openingFeet = Math.floor(openingWidthFeet);
+                                const openingInches = Math.round((openingWidthFeet - openingFeet) * 12);
+                                const dimensionText = openingInches > 0 
+                                    ? `${openingFeet}' ${openingInches}"` 
+                                    : `${openingFeet}'`;
+                                
+                                ctx.save();
+                                ctx.setLineDash([]);
+                                ctx.font = `bold ${11 / state.zoom}px Arial`;
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                
+                                // Position label
+                                const centerX = wall.start.x + unitX * midPixel;
+                                const centerY = wall.start.y + unitY * midPixel;
+                                const labelOffsetX = perpX * 1.8; // Offset perpendicular to wall
+                                const labelOffsetY = perpY * 1.8;
                             
                             // Draw background box
                             const metrics = ctx.measureText(dimensionText);
@@ -12119,6 +12122,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                             ctx.font = `bold ${9 / state.zoom}px Arial`;
                             ctx.fillText(`${cutLenFt.toFixed(2)}'`, 0, 6 / state.zoom);
                             ctx.restore();
+                            }
                         }
                     });
                     
