@@ -3859,6 +3859,41 @@
                 }
             }
             
+            // ===== SHIFT+CLICK ROOM TO DRAG IT (Alternative method) =====
+            if (e.button === 0 && e.shiftKey && !state.wallSelectionMode && !state.roomEditMode) {
+                const room = getCurrentRoom();
+                if (room && room.floorPoints && room.floorPoints.length >= 3) {
+                    // Check if clicking inside current room
+                    let inside = false;
+                    for (let j = 0, k = room.floorPoints.length - 1; j < room.floorPoints.length; k = j++) {
+                        const xi = room.floorPoints[j].x;
+                        const yi = room.floorPoints[j].y;
+                        const xk = room.floorPoints[k].x;
+                        const yk = room.floorPoints[k].y;
+                        
+                        if ((yi > y) !== (yk > y) && x < (xk - xi) * (y - yi) / (yk - yi) + xi) {
+                            inside = !inside;
+                        }
+                    }
+                    
+                    if (inside) {
+                        // Start dragging room
+                        state.draggingRoom = {
+                            roomIndex: state.currentRoomIndex,
+                            startX: x,
+                            startY: y,
+                            originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
+                        };
+                        
+                        canvas2D.style.cursor = 'move';
+                        showToast(`🖐️ SHIFT+Drag to move ${room.name}`, 2000);
+                        console.log(`SHIFT+Click - ready to drag ${room.name}`);
+                        redraw2D();
+                        return;
+                    }
+                }
+            }
+            
             // ===== ROOM INTERIOR CLICK DETECTION - Click anywhere inside room to select =====
             if (e.button === 0) {
                 // Check all rooms on current level to see if we clicked inside one
