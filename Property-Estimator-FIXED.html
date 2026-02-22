@@ -4872,8 +4872,8 @@
             }
             
             // Existing hover detection code continues below...
-            const room = getCurrentRoom();
-            if (!room) return;
+            const currentRoom = getCurrentRoom();
+            if (!currentRoom) return;
             
             // Always reset hover states first
             const prevHoverDoor = hoverDoorIndex;
@@ -4885,8 +4885,8 @@
             // Check if hovering over door or window when not in wall selection mode and no feature selected
             if (!state.wallSelectionMode && !state.currentFeature) {
                 // Check doors - always check regardless of other conditions
-                for (let i = 0; i < room.doors.length; i++) {
-                    const door = room.doors[i];
+                for (let i = 0; i < currentRoom.doors.length; i++) {
+                    const door = currentRoom.doors[i];
                     const dist = Math.sqrt(Math.pow(x - door.x, 2) + Math.pow(y - door.y, 2));
                     if (dist < 50) { // Increased to 50 pixels for easier detection
                         hoverDoorIndex = i;
@@ -4897,8 +4897,8 @@
                 }
                 
                 // Check windows
-                for (let i = 0; i < room.windows.length; i++) {
-                    const win = room.windows[i];
+                for (let i = 0; i < currentRoom.windows.length; i++) {
+                    const win = currentRoom.windows[i];
                     const dist = Math.sqrt(Math.pow(x - win.x, 2) + Math.pow(y - win.y, 2));
                     if (dist < 50) { // Increased to 50 pixels
                         hoverWindowIndex = i;
@@ -4909,7 +4909,7 @@
                 }
                 
                 // Check wall cuts/openings
-                const hitCut = findClickedCut(room, x, y);
+                const hitCut = findClickedCut(currentRoom, x, y);
                 if (hitCut) {
                     canvas2D.style.cursor = 'grab';
                     console.log('🔓 Hovering over opening - ready to drag');
@@ -4917,7 +4917,7 @@
                 }
                 
                 // Check missing walls
-                const hitMissing = findMissingAtPoint(room, x, y);
+                const hitMissing = findMissingAtPoint(currentRoom, x, y);
                 if (hitMissing) {
                     canvas2D.style.cursor = 'grab';
                     return;
