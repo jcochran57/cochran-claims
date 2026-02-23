@@ -1409,10 +1409,6 @@
                     <span class="btn-icon">🏠</span>
                     <span class="btn-label">Room</span>
                 </button>
-                <button class="toolbar-btn" onclick="showLidarImport()" title="Import LiDAR">
-                    <span class="btn-icon">📡</span>
-                    <span class="btn-label">LiDAR</span>
-                </button>
             </div>
             
             <div class="toolbar-divider"></div>
@@ -1609,20 +1605,7 @@
                 <!-- Room tabs will be generated here -->
             </div>
             
-            <!-- Right: Add Room dropdown (Xactimate style) -->
-            <div style="position: relative; flex-shrink: 0;">
-                <button onclick="toggleAddRoomMenu()" id="addRoomBtn" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 8px;">
-                    + Add Room ▼
-                </button>
-                <div id="addRoomMenu" style="display: none; position: absolute; bottom: 100%; right: 0; background: white; border: 2px solid #999; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 5px; min-width: 200px; z-index: 999999;">
-                    <button onclick="addNewRoom(); closeAddRoomMenu();" style="width: 100%; padding: 12px 16px; background: white; border: none; border-bottom: 1px solid #ddd; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600;">
-                        🏠 Quick Add
-                    </button>
-                    <button onclick="showDimensionRoomModal(); closeAddRoomMenu();" style="width: 100%; padding: 12px 16px; background: white; border: none; cursor: pointer; text-align: left; font-size: 14px; font-weight: 600;">
-                        📐 Dimension Room
-                    </button>
-                </div>
-            </div>
+            <!-- Add Room button removed - use toolbar button instead -->
         </div>
     </div>
     </div>
