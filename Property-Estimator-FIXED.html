@@ -9965,11 +9965,13 @@ function confirmCutWall() {
                     idx !== state.draggingRoom.roomIndex
                 );
                 
+                // Instead of marking walls as missing, ACTUALLY ALIGN the rooms perfectly
+                let roomMoved = false;
                 for (let edgeIdx = 0; edgeIdx < room.floorPoints.length; edgeIdx++) {
                     const p1 = room.floorPoints[edgeIdx];
                     const p2 = room.floorPoints[(edgeIdx + 1) % room.floorPoints.length];
                     const edgeLen = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-                    if (edgeLen < 10) continue; // Skip very short edges
+                    if (edgeLen < 10) continue;
                     
                     for (const otherRoom of roomsOnLevel) {
                         if (!otherRoom.floorPoints || otherRoom.floorPoints.length < 3) continue;
@@ -9987,59 +9989,37 @@ function confirmCutWall() {
                             const dir2y = (op2.y - op1.y) / otherEdgeLen;
                             const dot = Math.abs(dir1x * dir2x + dir1y * dir2y);
                             
-                            if (dot > 0.98) { // Parallel (within ~11 degrees)
-                                // Calculate perpendicular distance between parallel lines
+                            if (dot > 0.98) { // Parallel
                                 const perpX = -dir1y;
                                 const perpY = dir1x;
                                 const toOtherX = op1.x - p1.x;
                                 const toOtherY = op1.y - p1.y;
                                 const perpDist = Math.abs(toOtherX * perpX + toOtherY * perpY);
                                 
-                                if (perpDist < snapTolerance) {
-                                    // Walls are parallel and close - this is a shared wall!
-                                    console.log(`🔗 Shared wall detected! ${room.name} edge ${edgeIdx} ↔ ${otherRoom.name} edge ${otherEdgeIdx} (${perpDist.toFixed(1)}px apart)`);
+                                if (perpDist < snapTolerance && !roomMoved) {
+                                    // Move room to align perfectly with the other room
+                                    const offsetX = (toOtherX * perpX + toOtherY * perpY) * perpX;
+                                    const offsetY = (toOtherX * perpX + toOtherY * perpY) * perpY;
                                     
-                                    // Mark walls as missing (opening)
-                                    const wallLength = edgeLen / 30;
+                                    // Apply offset to all points in the room
+                                    room.floorPoints.forEach(pt => {
+                                        pt.x += offsetX;
+                                        pt.y += offsetY;
+                                    });
                                     
-                                    // Mark in current room
-                                    if (!room.walls) updateRoomWallsFromPoints(room);
-                                    if (room.walls && room.walls[edgeIdx]) {
-                                        room.walls[edgeIdx].cuts = room.walls[edgeIdx].cuts || [];
-                                        // Check if not already marked
-                                        const alreadyMarked = room.walls[edgeIdx].cuts.some(c => c.isMissing);
-                                        if (!alreadyMarked) {
-                                            room.walls[edgeIdx].cuts.push({
-                                                startDist: 0,
-                                                endDist: wallLength,
-                                                isOpening: true,
-                                                isMissing: true
-                                            });
-                                            console.log(`  ✓ Marked wall ${edgeIdx} as MISSING in ${room.name}`);
-                                        }
-                                    }
+                                    roomMoved = true;
+                                    console.log(`✅ Snapped ${room.name} to ${otherRoom.name} (moved ${perpDist.toFixed(1)}px)`);
+                                    showToast(`✅ ${room.name} snapped to ${otherRoom.name}`, 2000);
                                     
-                                    // Mark in other room
-                                    if (!otherRoom.walls) updateRoomWallsFromPoints(otherRoom);
-                                    if (otherRoom.walls && otherRoom.walls[otherEdgeIdx]) {
-                                        otherRoom.walls[otherEdgeIdx].cuts = otherRoom.walls[otherEdgeIdx].cuts || [];
-                                        const alreadyMarked = otherRoom.walls[otherEdgeIdx].cuts.some(c => c.isMissing);
-                                        if (!alreadyMarked) {
-                                            otherRoom.walls[otherEdgeIdx].cuts.push({
-                                                startDist: 0,
-                                                endDist: otherEdgeLen / 30,
-                                                isOpening: true,
-                                                isMissing: true
-                                            });
-                                            console.log(`  ✓ Marked wall ${otherEdgeIdx} as MISSING in ${otherRoom.name}`);
-                                        }
-                                    }
-                                    
-                                    showToast(`✅ ${room.name} connected! Shared wall marked as missing.`, 3000);
+                                    // Update walls from new positions
+                                    updateRoomWallsFromPoints(room);
+                                    break;
                                 }
                             }
                         }
+                        if (roomMoved) break;
                     }
+                    if (roomMoved) break;
                 }
                 
                 state.draggingRoom = null;
