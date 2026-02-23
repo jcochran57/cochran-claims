@@ -12010,12 +12010,17 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     // Reset for markers
                     let currentPos = 0; // in feet
                     
-                    // Draw red markers at cut locations
+                    // Draw red markers at cut locations (but NOT for shared walls)
                     ctx.strokeStyle = '#FF0000';
                     ctx.lineWidth = 3 / state.zoom;
                     ctx.setLineDash([5 / state.zoom, 5 / state.zoom]);
                     
                     wallCuts.forEach(cut => {
+                        // Skip rendering for full shared walls
+                        if (cut.isMissing === true) {
+                            return; // Don't draw anything for shared walls
+                        }
+                        
                         const startPixel = cut.startDist * scale;
                         const endPixel = cut.endDist * scale;
                         const midPixel = (startPixel + endPixel) / 2;
