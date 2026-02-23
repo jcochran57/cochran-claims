@@ -5672,11 +5672,16 @@
         }
 
         function showAddRoomModal() {
+            console.log('🔔 showAddRoomModal called - showing modal');
             const modal = document.getElementById('addRoomModal');
             const input = document.getElementById('addRoomInput');
             
             input.value = `Room ${state.rooms.length + 1}`;
             modal.style.display = 'flex';
+            modal.style.zIndex = '999999'; // Force z-index
+            modal.style.position = 'fixed';
+            
+            console.log('Modal display:', modal.style.display, 'z-index:', modal.style.zIndex);
             
             // Focus and select text after modal is visible
             setTimeout(() => {
