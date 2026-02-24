@@ -11045,8 +11045,8 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 // Apply ortho mode if enabled (AFTER snapping)
                 if (state.orthoMode && state.wallDrawingCorners.length > 0 && !snappedToWall) {
                     const lastCorner = state.wallDrawingCorners[state.wallDrawingCorners.length - 1];
-                    const dx = Math.abs(x - lastCorner.x);
-                    const dy = Math.abs(y - lastCorner.y);
+                    const dx = Math.abs(cornerX - lastCorner.x);  // Use cornerX (after snap)
+                    const dy = Math.abs(cornerY - lastCorner.y);  // Use cornerY (after snap)
                     
                     // Snap to horizontal or vertical
                     if (dx > dy) {
