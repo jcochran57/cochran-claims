@@ -10968,8 +10968,9 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                         windows: [],
                         damageMarkers: [],
                         openings: [],
-                        positionX: state.rooms.length * 30,
-                        positionZ: 0
+                        positionX: 0,  // Wall coordinates are already absolute, not relative
+                        positionZ: 0,
+                        level: state.currentLevel || 'Main Floor (0)'
                     });
                     
                     // Switch to new room
