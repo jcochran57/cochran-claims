@@ -9997,9 +9997,16 @@ function confirmCutWall() {
                                 const perpDist = Math.abs(toOtherX * perpX + toOtherY * perpY);
                                 
                                 if (perpDist < snapTolerance && !roomMoved) {
+                                    console.log(`🔧 BEFORE snap:`);
+                                    console.log(`  Room edge: (${p1.x.toFixed(1)}, ${p1.y.toFixed(1)}) → (${p2.x.toFixed(1)}, ${p2.y.toFixed(1)})`);
+                                    console.log(`  Other edge: (${op1.x.toFixed(1)}, ${op1.y.toFixed(1)}) → (${op2.x.toFixed(1)}, ${op2.y.toFixed(1)})`);
+                                    console.log(`  Distance: ${perpDist.toFixed(2)}px`);
+                                    
                                     // Move room to align perfectly with the other room
                                     const offsetX = (toOtherX * perpX + toOtherY * perpY) * perpX;
                                     const offsetY = (toOtherX * perpX + toOtherY * perpY) * perpY;
+                                    
+                                    console.log(`  Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)})`);
                                     
                                     // Apply offset to all points in the room
                                     room.floorPoints.forEach(pt => {
@@ -10007,8 +10014,12 @@ function confirmCutWall() {
                                         pt.y += offsetY;
                                     });
                                     
+                                    console.log(`🔧 AFTER snap:`);
+                                    console.log(`  Room edge: (${p1.x.toFixed(1)}, ${p1.y.toFixed(1)}) → (${p2.x.toFixed(1)}, ${p2.y.toFixed(1)})`);
+                                    console.log(`  Difference: p1 vs op1 = ${Math.abs(p1.x - op1.x).toFixed(2)}, ${Math.abs(p1.y - op1.y).toFixed(2)}`);
+                                    
                                     roomMoved = true;
-                                    console.log(`✅ Snapped ${room.name} to ${otherRoom.name} (moved ${perpDist.toFixed(1)}px)`);
+                                    console.log(`✅ Snapped ${room.name} to ${otherRoom.name}`);
                                     showToast(`✅ ${room.name} snapped to ${otherRoom.name}`, 2000);
                                     
                                     // Update walls from new positions
