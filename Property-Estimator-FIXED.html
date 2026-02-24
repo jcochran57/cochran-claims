@@ -23340,7 +23340,7 @@ function setFeatureMode(feature, event) {
 function clearActiveToolMode() {
     console.log('❌ Clearing all tool modes');
     
-    // Clear all active states
+    // Clear all active tool states (but NOT room edit mode - that's separate)
     state.wallSelectionMode = false;
     state.currentFeature = null;
     state.wallDrawingFirstCorner = null; // Clear wall drawing state
@@ -23348,9 +23348,8 @@ function clearActiveToolMode() {
     state.zoomWindowMode = false;
     state.zoomWindowStart = null;
     state.zoomWindowEnd = null;
-    state.roomEditMode = false; // Exit room edit mode
-    state.draggingHandle = null; // Clear any handle dragging
-    state.hoveredHandle = null; // Clear handle hover
+    // DON'T clear roomEditMode - room editing is not a "tool mode"
+    // DON'T clear draggingHandle/hoveredHandle - those are room edit states
     
     // Remove active class from all toolbar buttons
     document.querySelectorAll('.toolbar-btn').forEach(btn => {
