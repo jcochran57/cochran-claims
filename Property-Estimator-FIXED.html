@@ -14637,11 +14637,51 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 ctx.save();
                 ctx.setTransform(1, 0, 0, 1, 0, 0); // Screen coordinates
                 
-                // Calculate preview point (with ortho snapping)
+                // Calculate preview point (with wall snapping first, then ortho snapping)
                 let previewX = state.mouseWorldX;
                 let previewY = state.mouseWorldY;
+                let snappedToWallPreview = false;
                 
-                if (state.orthoMode) {
+                // CHECK FOR WALL SNAPPING FIRST (same logic as click handler)
+                const SNAP_DISTANCE = 25;
+                const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                let minDist = SNAP_DISTANCE;
+                
+                for (const room of roomsOnLevel) {
+                    if (!room.floorPoints || room.floorPoints.length < 2) continue;
+                    
+                    for (let i = 0; i < room.floorPoints.length; i++) {
+                        const p1 = room.floorPoints[i];
+                        const p2 = room.floorPoints[(i + 1) % room.floorPoints.length];
+                        
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const lengthSquared = dx * dx + dy * dy;
+                        
+                        if (lengthSquared === 0) continue;
+                        
+                        let t = ((state.mouseWorldX - p1.x) * dx + (state.mouseWorldY - p1.y) * dy) / lengthSquared;
+                        t = Math.max(0, Math.min(1, t));
+                        
+                        const closestX = p1.x + t * dx;
+                        const closestY = p1.y + t * dy;
+                        
+                        const dist = Math.sqrt(
+                            Math.pow(state.mouseWorldX - closestX, 2) + 
+                            Math.pow(state.mouseWorldY - closestY, 2)
+                        );
+                        
+                        if (dist < minDist) {
+                            minDist = dist;
+                            previewX = closestX;
+                            previewY = closestY;
+                            snappedToWallPreview = true;
+                        }
+                    }
+                }
+                
+                // Apply ortho mode ONLY if not snapped to wall
+                if (state.orthoMode && !snappedToWallPreview) {
                     const dx = Math.abs(state.mouseWorldX - lastCorner.x);
                     const dy = Math.abs(state.mouseWorldY - lastCorner.y);
                     
@@ -14677,7 +14717,17 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 const screenPreviewY = previewY * state.zoom + state.panY;
                 
                 // Draw preview line from last corner to preview position
-                ctx.strokeStyle = (state.wallDrawingCorners.length >= 3 && distToFirst < CLOSE_THRESHOLD) ? '#4CAF50' : (state.orthoMode ? '#FF9800' : '#2196F3');
+                // Green if snapped to wall, green if closing to start, orange if ortho, blue if free
+                let previewColor = '#2196F3'; // Default blue
+                if (snappedToWallPreview && state.wallDrawingCorners.length >= 2) {
+                    previewColor = '#4CAF50'; // Green - will close on wall
+                } else if (state.wallDrawingCorners.length >= 3 && distToFirst < CLOSE_THRESHOLD) {
+                    previewColor = '#4CAF50'; // Green - will close to start
+                } else if (state.orthoMode) {
+                    previewColor = '#FF9800'; // Orange - ortho mode
+                }
+                
+                ctx.strokeStyle = previewColor;
                 ctx.lineWidth = 3;
                 ctx.setLineDash([10, 5]);
                 ctx.beginPath();
