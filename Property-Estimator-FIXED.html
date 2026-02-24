@@ -10989,30 +10989,59 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let cornerX = x;
                 let cornerY = y;
                 
-                // SNAP TO EXISTING WALL ENDPOINTS
-                const SNAP_DISTANCE = 20; // 20px snap radius
+                // SNAP TO EXISTING WALLS (anywhere on the wall, not just endpoints)
+                const SNAP_DISTANCE = 25; // 25px snap radius
                 let snappedToWall = false;
+                let snappedToWallEdge = false; // Track if we snapped to a wall segment
                 
-                // Check all rooms on current level for wall endpoints
+                // Check all rooms on current level for walls
                 const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                let minDist = SNAP_DISTANCE;
+                let snapX = cornerX;
+                let snapY = cornerY;
+                
                 for (const room of roomsOnLevel) {
-                    if (!room.floorPoints) continue;
+                    if (!room.floorPoints || room.floorPoints.length < 2) continue;
                     
-                    for (const point of room.floorPoints) {
+                    // Check each wall segment
+                    for (let i = 0; i < room.floorPoints.length; i++) {
+                        const p1 = room.floorPoints[i];
+                        const p2 = room.floorPoints[(i + 1) % room.floorPoints.length];
+                        
+                        // Calculate distance from point to line segment
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const lengthSquared = dx * dx + dy * dy;
+                        
+                        if (lengthSquared === 0) continue; // Skip zero-length segments
+                        
+                        // Project point onto line segment
+                        let t = ((x - p1.x) * dx + (y - p1.y) * dy) / lengthSquared;
+                        t = Math.max(0, Math.min(1, t)); // Clamp to segment
+                        
+                        const closestX = p1.x + t * dx;
+                        const closestY = p1.y + t * dy;
+                        
                         const dist = Math.sqrt(
-                            Math.pow(x - point.x, 2) + 
-                            Math.pow(y - point.y, 2)
+                            Math.pow(x - closestX, 2) + 
+                            Math.pow(y - closestY, 2)
                         );
                         
-                        if (dist < SNAP_DISTANCE) {
-                            cornerX = point.x;
-                            cornerY = point.y;
+                        if (dist < minDist) {
+                            minDist = dist;
+                            snapX = closestX;
+                            snapY = closestY;
                             snappedToWall = true;
-                            console.log(`🧲 Snapped to existing wall endpoint at (${cornerX.toFixed(1)}, ${cornerY.toFixed(1)})`);
-                            break;
+                            // Check if we snapped to an endpoint or middle of wall
+                            snappedToWallEdge = (t > 0.01 && t < 0.99);
                         }
                     }
-                    if (snappedToWall) break;
+                }
+                
+                if (snappedToWall) {
+                    cornerX = snapX;
+                    cornerY = snapY;
+                    console.log(`🧲 Snapped to existing wall at (${cornerX.toFixed(1)}, ${cornerY.toFixed(1)})`);
                 }
                 
                 // Apply ortho mode if enabled (AFTER snapping)
@@ -11050,10 +11079,9 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     }
                 }
                 
-                // OPTION 2: Close on existing wall (NEW - creates separate room)
-                if (!shouldClose && state.wallDrawingCorners.length >= 2 && snappedToWall) {
-                    // Check if this snapped point connects to an existing wall that would complete a room
-                    // For now, just close if we have 2+ corners and snapped to a wall endpoint
+                // OPTION 2: Close on existing wall (even in middle of wall)
+                // Allow closing after just 1 corner if we snapped to a wall
+                if (!shouldClose && state.wallDrawingCorners.length >= 1 && snappedToWall) {
                     shouldClose = true;
                     closeReason = 'closed on existing wall';
                 }
