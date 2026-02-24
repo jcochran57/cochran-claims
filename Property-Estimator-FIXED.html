@@ -10989,7 +10989,49 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let cornerX = x;
                 let cornerY = y;
                 
-
+                // SNAP TO EXISTING WALLS (anywhere on the wall, not just endpoints)
+                const SNAP_DISTANCE = 30; // 30px snap radius (1 foot)
+                let snappedToWall = false;
+                let snappedToWallEdge = false;
+                
+                const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                let minDist = SNAP_DISTANCE;
+                let snapX = cornerX;
+                let snapY = cornerY;
+                
+                for (const room of roomsOnLevel) {
+                    if (!room.floorPoints || room.floorPoints.length < 2) continue;
+                    
+                    for (let i = 0; i < room.floorPoints.length; i++) {
+                        const p1 = room.floorPoints[i];
+                        const p2 = room.floorPoints[(i + 1) % room.floorPoints.length];
+                        
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const lengthSquared = dx * dx + dy * dy;
+                        
+                        if (lengthSquared === 0) continue;
+                        
+                        let t = ((x - p1.x) * dx + (y - p1.y) * dy) / lengthSquared;
+                        t = Math.max(0, Math.min(1, t));
+                        
+                        const closestX = p1.x + t * dx;
+                        const closestY = p1.y + t * dy;
+                        
+                        const dist = Math.sqrt(
+                            Math.pow(x - closestX, 2) + 
+                            Math.pow(y - closestY, 2)
+                        );
+                        
+                        if (dist <= minDist) {
+                            minDist = dist;
+                            snapX = closestX;
+                            snapY = closestY;
+                            snappedToWall = true;
+                            snappedToWallEdge = (t > 0.01 && t < 0.99);
+                        }
+                    }
+                }
                 
                 if (snappedToWall) {
                     cornerX = snapX;
