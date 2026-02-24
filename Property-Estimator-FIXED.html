@@ -3845,6 +3845,7 @@
             }
             
             // ===== CLICK INSIDE ANY ROOM TO DRAG IT =====
+            console.log(`🔍 Drag check: button=${e.button}, wallMode=${state.wallSelectionMode}, feature=${state.currentFeature}, hoveredHandle=${state.hoveredHandle}`);
             if (e.button === 0 && !state.wallSelectionMode && !state.currentFeature && !state.hoveredHandle) {
                 // Check all rooms on current level
                 const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
@@ -3867,6 +3868,8 @@
                         if (inside) {
                             const globalIndex = state.rooms.indexOf(room);
                             
+                            console.log(`🖱️ MOUSEDOWN inside ${room.name} at (${x.toFixed(1)}, ${y.toFixed(1)})`);
+                            
                             // Start dragging THIS room
                             state.draggingRoom = {
                                 roomIndex: globalIndex,
@@ -3875,11 +3878,12 @@
                                 originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
                             };
                             
+                            console.log(`  Set state.draggingRoom:`, state.draggingRoom);
+                            
                             state.currentRoomIndex = globalIndex; // Switch to this room
                             state.roomEditMode = true; // Enable handles
                             canvas2D.style.cursor = 'move';
                             showToast(`🖐️ Drag to move ${room.name}`, 1500);
-                            console.log(`Click inside room - ready to drag ${room.name}`);
                             updateRoomList();
                             redraw2D();
                             return;
