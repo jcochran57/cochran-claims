@@ -10989,8 +10989,34 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let cornerX = x;
                 let cornerY = y;
                 
-                // Apply ortho mode if enabled
-                if (state.orthoMode && state.wallDrawingCorners.length > 0) {
+                // SNAP TO EXISTING WALL ENDPOINTS
+                const SNAP_DISTANCE = 20; // 20px snap radius
+                let snappedToWall = false;
+                
+                // Check all rooms on current level for wall endpoints
+                const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
+                for (const room of roomsOnLevel) {
+                    if (!room.floorPoints) continue;
+                    
+                    for (const point of room.floorPoints) {
+                        const dist = Math.sqrt(
+                            Math.pow(x - point.x, 2) + 
+                            Math.pow(y - point.y, 2)
+                        );
+                        
+                        if (dist < SNAP_DISTANCE) {
+                            cornerX = point.x;
+                            cornerY = point.y;
+                            snappedToWall = true;
+                            console.log(`🧲 Snapped to existing wall endpoint at (${cornerX.toFixed(1)}, ${cornerY.toFixed(1)})`);
+                            break;
+                        }
+                    }
+                    if (snappedToWall) break;
+                }
+                
+                // Apply ortho mode if enabled (AFTER snapping)
+                if (state.orthoMode && state.wallDrawingCorners.length > 0 && !snappedToWall) {
                     const lastCorner = state.wallDrawingCorners[state.wallDrawingCorners.length - 1];
                     const dx = Math.abs(x - lastCorner.x);
                     const dy = Math.abs(y - lastCorner.y);
@@ -11005,10 +11031,11 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     }
                 }
                 
-                // Add corner to sequence
-                // Check if we should close the room (only if we have 3+ corners and click near first)
+                // Check if we should close the room
                 let shouldClose = false;
+                let closeReason = '';
                 
+                // OPTION 1: Close back to first corner (original behavior)
                 if (state.wallDrawingCorners.length >= 3) {
                     const firstCorner = state.wallDrawingCorners[0];
                     const distToFirst = Math.sqrt(
@@ -11017,12 +11044,23 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     );
                     
                     const CLOSE_THRESHOLD = 30; // 30 pixels
-                    shouldClose = distToFirst < CLOSE_THRESHOLD;
+                    if (distToFirst < CLOSE_THRESHOLD) {
+                        shouldClose = true;
+                        closeReason = 'closed back to start';
+                    }
+                }
+                
+                // OPTION 2: Close on existing wall (NEW - creates separate room)
+                if (!shouldClose && state.wallDrawingCorners.length >= 2 && snappedToWall) {
+                    // Check if this snapped point connects to an existing wall that would complete a room
+                    // For now, just close if we have 2+ corners and snapped to a wall endpoint
+                    shouldClose = true;
+                    closeReason = 'closed on existing wall';
                 }
                 
                 if (shouldClose) {
                     // DON'T ADD A NEW CORNER - the room closes back to the first corner automatically
-                    console.log('✅ CLOSING ROOM - Room will close back to first corner (no duplicate corner added)');
+                    console.log(`✅ CLOSING ROOM - ${closeReason}`);
                     
                     // Close the room!
                     console.log('✅ Creating room with', state.wallDrawingCorners.length, 'corners');
