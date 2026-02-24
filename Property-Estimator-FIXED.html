@@ -11198,12 +11198,14 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                         banner.style.color = 'white';
                     }
                     
-                    // Auto-zoom to fit the new room
-                    setTimeout(() => {
-                        if (typeof window.zoomAll === 'function') {
-                            window.zoomAll();
-                        }
-                    }, 100);
+                    // DON'T auto-zoom - it moves the view away from where user is working
+                    // User can manually zoom if needed
+                    
+                    // DEBUG: Log all rooms to verify Room 3 was created
+                    console.log(`🔍 Total rooms in state: ${state.rooms.length}`);
+                    state.rooms.forEach((r, idx) => {
+                        console.log(`  Room ${idx}: ${r.name}, floorPoints: ${r.floorPoints.length}, walls: ${r.walls.length}`);
+                    });
                     
                     // Redraw
                     redraw2D();
