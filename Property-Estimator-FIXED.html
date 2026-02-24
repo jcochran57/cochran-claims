@@ -11077,16 +11077,19 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     }
                 }
                 
-                // OPTION 2: Close on existing wall (need at least 2 corners placed)
-                // This allows creating interior dividing walls
-                if (!shouldClose && state.wallDrawingCorners.length >= 2 && snappedToWall) {
+                // OPTION 2: Close on existing wall (need at least 3 corners placed)
+                // When we snap to wall, ADD this corner first, then close (gives 4-sided room)
+                if (!shouldClose && state.wallDrawingCorners.length >= 3 && snappedToWall) {
+                    // ADD THE SNAPPED CORNER FIRST
+                    state.wallDrawingCorners.push({ x: cornerX, y: cornerY });
+                    console.log(`✓ Corner ${state.wallDrawingCorners.length} added at:`, cornerX, cornerY);
+                    
                     shouldClose = true;
                     closeReason = 'closed on existing wall - creating interior room';
                     console.log('🔨 Creating interior wall - snapped to existing wall');
                 }
                 
                 if (shouldClose) {
-                    // DON'T ADD A NEW CORNER - the room closes back to the first corner automatically
                     console.log(`✅ CLOSING ROOM - ${closeReason}`);
                     
                     // Close the room!
