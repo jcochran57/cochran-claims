@@ -10989,54 +10989,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let cornerX = x;
                 let cornerY = y;
                 
-                // SNAP TO EXISTING WALLS (anywhere on the wall, not just endpoints)
-                const SNAP_DISTANCE = 25; // 25px snap radius
-                let snappedToWall = false;
-                let snappedToWallEdge = false; // Track if we snapped to a wall segment
-                
-                // Check all rooms on current level for walls
-                const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
-                let minDist = SNAP_DISTANCE;
-                let snapX = cornerX;
-                let snapY = cornerY;
-                
-                for (const room of roomsOnLevel) {
-                    if (!room.floorPoints || room.floorPoints.length < 2) continue;
-                    
-                    // Check each wall segment
-                    for (let i = 0; i < room.floorPoints.length; i++) {
-                        const p1 = room.floorPoints[i];
-                        const p2 = room.floorPoints[(i + 1) % room.floorPoints.length];
-                        
-                        // Calculate distance from point to line segment
-                        const dx = p2.x - p1.x;
-                        const dy = p2.y - p1.y;
-                        const lengthSquared = dx * dx + dy * dy;
-                        
-                        if (lengthSquared === 0) continue; // Skip zero-length segments
-                        
-                        // Project point onto line segment
-                        let t = ((x - p1.x) * dx + (y - p1.y) * dy) / lengthSquared;
-                        t = Math.max(0, Math.min(1, t)); // Clamp to segment
-                        
-                        const closestX = p1.x + t * dx;
-                        const closestY = p1.y + t * dy;
-                        
-                        const dist = Math.sqrt(
-                            Math.pow(x - closestX, 2) + 
-                            Math.pow(y - closestY, 2)
-                        );
-                        
-                        if (dist < minDist) {
-                            minDist = dist;
-                            snapX = closestX;
-                            snapY = closestY;
-                            snappedToWall = true;
-                            // Check if we snapped to an endpoint or middle of wall
-                            snappedToWallEdge = (t > 0.01 && t < 0.99);
-                        }
-                    }
-                }
+
                 
                 if (snappedToWall) {
                     cornerX = snapX;
@@ -14643,7 +14596,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let snappedToWallPreview = false;
                 
                 // CHECK FOR WALL SNAPPING FIRST (same logic as click handler)
-                const SNAP_DISTANCE = 25;
+                const SNAP_DISTANCE = 30; // Match click handler
                 const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
                 let minDist = SNAP_DISTANCE;
                 
@@ -14671,7 +14624,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                             Math.pow(state.mouseWorldY - closestY, 2)
                         );
                         
-                        if (dist < minDist) {
+                        if (dist <= minDist) {  // Changed from < to <=
                             minDist = dist;
                             previewX = closestX;
                             previewY = closestY;
