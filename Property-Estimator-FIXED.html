@@ -3845,7 +3845,6 @@
             }
             
             // ===== CLICK INSIDE ANY ROOM TO DRAG IT =====
-            console.log(`🔍 Drag check: button=${e.button}, wallMode=${state.wallSelectionMode}, feature=${state.currentFeature}, hoveredHandle=${state.hoveredHandle}`);
             if (e.button === 0 && !state.wallSelectionMode && !state.currentFeature && !state.hoveredHandle) {
                 // Check all rooms on current level
                 const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
@@ -3868,8 +3867,6 @@
                         if (inside) {
                             const globalIndex = state.rooms.indexOf(room);
                             
-                            console.log(`🖱️ MOUSEDOWN inside ${room.name} at (${x.toFixed(1)}, ${y.toFixed(1)})`);
-                            
                             // Start dragging THIS room
                             state.draggingRoom = {
                                 roomIndex: globalIndex,
@@ -3877,8 +3874,6 @@
                                 startY: y,
                                 originalPoints: room.floorPoints.map(p => ({x: p.x, y: p.y}))
                             };
-                            
-                            console.log(`  Set state.draggingRoom:`, state.draggingRoom);
                             
                             state.currentRoomIndex = globalIndex; // Switch to this room
                             state.roomEditMode = true; // Enable handles
@@ -4635,13 +4630,11 @@
             
             // Room dragging (NEW - works with object structure)
             if (state.draggingRoom !== null && typeof state.draggingRoom === 'object' && state.draggingRoom.roomIndex !== undefined) {
-                console.log('🔄 Room dragging active...');
                 const room = state.rooms[state.draggingRoom.roomIndex];
                 if (room && room.floorPoints) {
                     // Calculate offset from drag start
                     let dx = x - state.draggingRoom.startX;
                     let dy = y - state.draggingRoom.startY;
-                    console.log(`  Offset: dx=${dx.toFixed(1)}, dy=${dy.toFixed(1)}`);
                     
                     // SNAP TO OTHER ROOMS' WALLS (Xactimate behavior)
                     const snapTolerance = 30; // 1 foot snap distance
@@ -8918,6 +8911,26 @@ function confirmCutWall() {
             // CRITICAL: Save old walls BEFORE wiping the array
             const oldWalls = room.walls || [];
             
+            // IMPORTANT: Update door/window wallIndex to match new wall positions
+            // Doors and windows store wallIndex which might change when walls are reordered
+            if (room.doors) {
+                room.doors.forEach(door => {
+                    // Door is already on the correct wall by index
+                    // Just verify wallIndex is valid
+                    if (door.wallIndex >= room.floorPoints.length) {
+                        door.wallIndex = room.floorPoints.length - 1;
+                    }
+                });
+            }
+            if (room.windows) {
+                room.windows.forEach(window => {
+                    // Window is already on the correct wall by index
+                    if (window.wallIndex >= room.floorPoints.length) {
+                        window.wallIndex = room.floorPoints.length - 1;
+                    }
+                });
+            }
+            
             // Recalculate walls from current floor points
             room.walls = [];
             
@@ -8941,6 +8954,26 @@ function confirmCutWall() {
                     end: { x: end.x, y: end.y },
                     cuts: preservedCuts,
                     missingWalls: preservedMissingWalls
+                });
+            }
+            
+            // Clamp door/window positions to new wall lengths
+            if (room.doors) {
+                room.doors.forEach(door => {
+                    const wall = room.walls[door.wallIndex];
+                    if (wall) {
+                        const maxPos = parseFloat(wall.length) - door.width;
+                        door.position = Math.max(0, Math.min(door.position, maxPos));
+                    }
+                });
+            }
+            if (room.windows) {
+                room.windows.forEach(window => {
+                    const wall = room.walls[window.wallIndex];
+                    if (wall) {
+                        const maxPos = parseFloat(wall.length) - window.width;
+                        window.position = Math.max(0, Math.min(window.position, maxPos));
+                    }
                 });
             }
         }
@@ -10010,16 +10043,9 @@ function confirmCutWall() {
                                 const perpDist = Math.abs(toOtherX * perpX + toOtherY * perpY);
                                 
                                 if (perpDist < snapTolerance && !roomMoved) {
-                                    console.log(`🔧 BEFORE snap:`);
-                                    console.log(`  Room edge: (${p1.x.toFixed(1)}, ${p1.y.toFixed(1)}) → (${p2.x.toFixed(1)}, ${p2.y.toFixed(1)})`);
-                                    console.log(`  Other edge: (${op1.x.toFixed(1)}, ${op1.y.toFixed(1)}) → (${op2.x.toFixed(1)}, ${op2.y.toFixed(1)})`);
-                                    console.log(`  Distance: ${perpDist.toFixed(2)}px`);
-                                    
                                     // Move room to align perfectly with the other room
                                     const offsetX = (toOtherX * perpX + toOtherY * perpY) * perpX;
                                     const offsetY = (toOtherX * perpX + toOtherY * perpY) * perpY;
-                                    
-                                    console.log(`  Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)})`);
                                     
                                     // Apply offset to all points in the room
                                     room.floorPoints.forEach(pt => {
@@ -10027,12 +10053,8 @@ function confirmCutWall() {
                                         pt.y += offsetY;
                                     });
                                     
-                                    console.log(`🔧 AFTER snap:`);
-                                    console.log(`  Room edge: (${p1.x.toFixed(1)}, ${p1.y.toFixed(1)}) → (${p2.x.toFixed(1)}, ${p2.y.toFixed(1)})`);
-                                    console.log(`  Difference: p1 vs op1 = ${Math.abs(p1.x - op1.x).toFixed(2)}, ${Math.abs(p1.y - op1.y).toFixed(2)}`);
-                                    
                                     roomMoved = true;
-                                    console.log(`✅ Snapped ${room.name} to ${otherRoom.name}`);
+                                    console.log(`✅ Snapped ${room.name} to ${otherRoom.name} (moved ${perpDist.toFixed(1)}px)`);
                                     showToast(`✅ ${room.name} snapped to ${otherRoom.name}`, 2000);
                                     
                                     // Update walls from new positions
@@ -13699,10 +13721,6 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             const dy2r = Math.abs(p2.y - p3.y);
             
             const reverseMatch = dx1r < tolerance && dy1r < tolerance && dx2r < tolerance && dy2r < tolerance;
-            
-            if (forwardMatch || reverseMatch) {
-                console.log(`✓ Shared wall detected: (${p1.x.toFixed(1)},${p1.y.toFixed(1)}) ↔ (${p3.x.toFixed(1)},${p3.y.toFixed(1)})`);
-            }
             
             // If BOTH endpoints match (within tolerance), it's the same wall!
             return forwardMatch || reverseMatch;
