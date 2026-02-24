@@ -4322,8 +4322,14 @@
                 const room = getCurrentRoom();
                 if (room && room.floorPoints) {
                     if (state.draggingHandle.type === 'corner') {
-                        // CORNER HANDLES DISABLED - prevent accidental room distortion
-                        // Only edge handles can be dragged
+                        // CORNER HANDLE DRAGGING - Move the corner point
+                        const index = state.draggingHandle.index;
+                        room.floorPoints[index].x = x;
+                        room.floorPoints[index].y = y;
+                        
+                        // Update walls from new points
+                        updateRoomWallsFromPoints(room);
+                        redraw2D();
                         return;
                     } else if (state.draggingHandle.type === 'edge') {
                         // XACTIMATE-STYLE: Show preview of new wall position
@@ -4625,11 +4631,13 @@
             
             // Room dragging (NEW - works with object structure)
             if (state.draggingRoom !== null && typeof state.draggingRoom === 'object' && state.draggingRoom.roomIndex !== undefined) {
+                console.log('🔄 Room dragging active...');
                 const room = state.rooms[state.draggingRoom.roomIndex];
                 if (room && room.floorPoints) {
                     // Calculate offset from drag start
                     let dx = x - state.draggingRoom.startX;
                     let dy = y - state.draggingRoom.startY;
+                    console.log(`  Offset: dx=${dx.toFixed(1)}, dy=${dy.toFixed(1)}`);
                     
                     // SNAP TO OTHER ROOMS' WALLS (Xactimate behavior)
                     const snapTolerance = 30; // 1 foot snap distance
