@@ -10990,7 +10990,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let cornerY = y;
                 
                 // SNAP TO EXISTING WALLS (anywhere on the wall, not just endpoints)
-                const SNAP_DISTANCE = 30; // 30px snap radius (1 foot)
+                const SNAP_DISTANCE = 40; // Increased to 40px for easier snapping
                 let snappedToWall = false;
                 let snappedToWallEdge = false;
                 
@@ -14638,7 +14638,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 let snappedToWallPreview = false;
                 
                 // CHECK FOR WALL SNAPPING FIRST (same logic as click handler)
-                const SNAP_DISTANCE = 30; // Match click handler
+                const SNAP_DISTANCE = 40; // Match click handler (40px)
                 const roomsOnLevel = state.rooms.filter(r => r.level === state.currentLevel);
                 let minDist = SNAP_DISTANCE;
                 
