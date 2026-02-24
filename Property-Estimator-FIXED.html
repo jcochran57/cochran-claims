@@ -11041,7 +11041,9 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 if (snappedToWall) {
                     cornerX = snapX;
                     cornerY = snapY;
-                    console.log(`🧲 Snapped to existing wall at (${cornerX.toFixed(1)}, ${cornerY.toFixed(1)})`);
+                    console.log(`🧲 Snapped to existing wall at (${cornerX.toFixed(1)}, ${cornerY.toFixed(1)}) - corners so far: ${state.wallDrawingCorners.length}`);
+                } else {
+                    console.log(`❌ No snap - distance to nearest wall was ${minDist.toFixed(1)}px (threshold: ${SNAP_DISTANCE}px)`);
                 }
                 
                 // Apply ortho mode if enabled (AFTER snapping)
@@ -11079,11 +11081,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                     }
                 }
                 
-                // OPTION 2: Close on existing wall (even in middle of wall)
-                // Allow closing after just 1 corner if we snapped to a wall
-                if (!shouldClose && state.wallDrawingCorners.length >= 1 && snappedToWall) {
+                // OPTION 2: Close on existing wall (need at least 2 corners placed)
+                // This allows creating interior dividing walls
+                if (!shouldClose && state.wallDrawingCorners.length >= 2 && snappedToWall) {
                     shouldClose = true;
-                    closeReason = 'closed on existing wall';
+                    closeReason = 'closed on existing wall - creating interior room';
+                    console.log('🔨 Creating interior wall - snapped to existing wall');
                 }
                 
                 if (shouldClose) {
