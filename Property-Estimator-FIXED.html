@@ -3876,6 +3876,7 @@
                             };
                             
                             state.currentRoomIndex = globalIndex; // Switch to this room
+                            state.roomEditMode = true; // Enable handles
                             canvas2D.style.cursor = 'move';
                             showToast(`🖐️ Drag to move ${room.name}`, 1500);
                             console.log(`Click inside room - ready to drag ${room.name}`);
