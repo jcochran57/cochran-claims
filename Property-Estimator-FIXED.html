@@ -13659,7 +13659,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
 
         // Helper function to check if two edges are the same (shared wall)
         function edgesMatch(p1, p2, p3, p4) {
-            const tolerance = 20.0; // Increased to 20px to handle all coordinate variations
+            const tolerance = 2.0; // 2px tolerance - walls should be perfectly aligned after snap
             
             // Check for exact endpoint matches
             const dx1 = Math.abs(p1.x - p3.x);
@@ -13676,13 +13676,8 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             
             const reverseMatch = dx1r < tolerance && dy1r < tolerance && dx2r < tolerance && dy2r < tolerance;
             
-            // Log close calls
-            if (forwardMatch) {
-                console.log(`      ✅ FORWARD MATCH: dx1=${dx1.toFixed(1)}, dy1=${dy1.toFixed(1)}, dx2=${dx2.toFixed(1)}, dy2=${dy2.toFixed(1)}`);
-            } else if (reverseMatch) {
-                console.log(`      ✅ REVERSE MATCH: dx1r=${dx1r.toFixed(1)}, dy1r=${dy1r.toFixed(1)}, dx2r=${dx2r.toFixed(1)}, dy2r=${dy2r.toFixed(1)}`);
-            } else if ((dx1 < 50 && dy1 < 50) || (dx1r < 50 && dy1r < 50)) {
-                console.log(`      ❌ NO MATCH: Forward: dx1=${dx1.toFixed(1)}, dy1=${dy1.toFixed(1)}, Reverse: dx1r=${dx1r.toFixed(1)}, dy1r=${dy1r.toFixed(1)}`);
+            if (forwardMatch || reverseMatch) {
+                console.log(`✓ Shared wall detected: (${p1.x.toFixed(1)},${p1.y.toFixed(1)}) ↔ (${p3.x.toFixed(1)},${p3.y.toFixed(1)})`);
             }
             
             // If BOTH endpoints match (within tolerance), it's the same wall!
@@ -13750,14 +13745,14 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
             const numPoints = room.floorPoints.length;
             const roomIndex = state.rooms.indexOf(room);
             
-            console.log(`  🔍 Checking ${room.name} (index ${roomIndex}) for shared edges...`);
+            // Removed console logging for performance
             
             // Check each edge of this room
             for (let i = 0; i < numPoints; i++) {
                 const p1 = room.floorPoints[i];
                 const p2 = room.floorPoints[(i + 1) % numPoints];
                 
-                console.log(`    Edge ${i}: (${p1.x.toFixed(1)}, ${p1.y.toFixed(1)}) → (${p2.x.toFixed(1)}, ${p2.y.toFixed(1)})`);
+                // Removed console logging for performance
                 
                 // Check against all other rooms
                 for (const otherRoom of roomsOnLevel) {
@@ -13773,15 +13768,12 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                         
                         if (edgesMatch(p1, p2, p3, p4)) {
                             // Edge is shared!
-                            console.log(`      🔗 MATCHED with ${otherRoom.name} edge ${j}`);
                             if (otherRoomIndex < roomIndex) {
                                 // Other room has lower index - skip this edge (other room will draw it)
                                 skip.add(i);
-                                console.log(`      → ${room.name} will SKIP edge ${i}`);
                             } else {
                                 // This room has lower index - draw as single line
                                 single.add(i);
-                                console.log(`      → ${room.name} will DRAW edge ${i}`);
                             }
                             break;
                         }
@@ -13789,7 +13781,7 @@ for (let i = room.doors.length - 1; i >= 0; i--) {
                 }
             }
             
-            console.log(`  📊 ${room.name} result: skip=[${Array.from(skip)}], single=[${Array.from(single)}]`);
+            // Removed console logging
             return { skip, single };
         }
 
